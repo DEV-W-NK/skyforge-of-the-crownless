@@ -1,8 +1,26 @@
-<<<<<<< HEAD
-# portifolio
+# 🌌 Skyforge-of-the-Crownless
 
-A new Flutter project.
-=======
-# skyforge-of-the-crownless
-Skyforge of the Crownless – Meu portfólio de projetos pessoais e profissionais, forjados com cuidado e criatividade. Cada projeto é uma prova de habilidades técnicas e visão estratégica.
->>>>>>> bc4be2d03d3986acce9cfee8da3094b18cd00f5b
+**Skyforge of the Crownless** – Meu portfólio de projetos pessoais e profissionais, forjados com cuidado e criatividade. Cada projeto é uma prova de habilidades técnicas e visão estratégica.
+
+---
+
+## Sobre mim
+
+Sou desenvolvedor apaixonado por tecnologia, com interesse em Flutter, Android (Java), C++, projetos experimentais e aplicações criativas que combinam lógica, design e inovação.
+
+---
+
+## Tecnologias
+
+- **Flutter & Dart** – Desenvolvimento cross-platform para Web, Android e Desktop  
+- **Android (Java/Kotlin)** – Apps nativos e integração com hardware  
+- **C++ & Arduino** – Experimentos, protótipos e códigos low-level  
+- **Firebase** – Hosting, Functions, Firestore, autenticação e deploy automático  
+
+---
+
+## Projetos
+
+Aqui você encontrará projetos pessoais, apps experimentais, provas de conceito e trabalhos profissionais que mostram minha capacidade de transformar ideias em soluções funcionais e criativas.
+
+---
