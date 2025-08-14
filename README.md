@@ -21,8 +21,4 @@ Sou desenvolvedor apaixonado por tecnologia, com interesse em Flutter, Android (
 
 ## Projetos
 
-<<<<<<< HEAD
 Aqui você encontrará projetos pessoais, apps experimentais, provas de conceito e trabalhos profissionais que mostram minha capacidade de transformar ideias em soluções funcionais e criativas.
-=======
-Aqui você encontrará projetos pessoais, apps experimentais, provas de conceito e trabalhos profissionais que mostram minha capacidade de transformar ideias em soluções funcionais e criativas.
->>>>>>> ff8785d309d92c20c1827254389a73af79c6733e
