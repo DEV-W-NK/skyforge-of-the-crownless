@@ -47,7 +47,7 @@ app.*.map.json
 /firebase-debug.log
 /firebase-debug.*.log
 .firebaserc
-/firebase_options.dart
+lib/firebase_options.dart
 # Firebase Hosting
 #/firebase.json
 *.cache
