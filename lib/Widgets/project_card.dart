@@ -8,9 +8,9 @@ import 'dart:math' as math;
 
 class ProjectCard extends StatefulWidget {
   final Project project;
-  final double width;
+  final double? width;
 
-  ProjectCard({required this.project, this.width = 320});
+  ProjectCard({required this.project, this.width});
 
   @override
   _ProjectCardState createState() => _ProjectCardState();
@@ -29,6 +29,7 @@ class _ProjectCardState extends State<ProjectCard>
   late Animation<double> _pulseAnimation;
   late Animation<double> _scaleAnimation;
   late Animation<Offset> _slideAnimation;
+  
 
   bool _isHovered = false;
   List<SparkleParticle> _sparkles = [];
@@ -164,6 +165,7 @@ class _ProjectCardState extends State<ProjectCard>
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
     return MouseRegion(
       onEnter: (_) => _onHover(true),
       onExit: (_) => _onHover(false),
@@ -208,6 +210,8 @@ class _ProjectCardState extends State<ProjectCard>
   }
 
   Widget _buildMainCard() {
+      final screenWidth = MediaQuery.of(context).size.width;
+  final isMobile = screenWidth < 600; // Adicione esta linha
     return Container(
       decoration: BoxDecoration(
         color: CyberpunkColors.charcoalGray,
@@ -245,7 +249,7 @@ class _ProjectCardState extends State<ProjectCard>
 
             // Conteúdo
             Padding(
-              padding: EdgeInsets.all(20),
+              padding: EdgeInsets.all(isMobile ? 16 : 20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -282,14 +286,17 @@ class _ProjectCardState extends State<ProjectCard>
   }
 
   Widget _buildHeader() {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isMobile = screenWidth < 600;
+
     return Row(
       children: [
-        // Ícone do projeto
+        // Ícone do projeto - menor no mobile
         AnimatedBuilder(
           animation: _pulseAnimation,
           builder: (context, child) {
             return Container(
-              padding: EdgeInsets.all(12),
+              padding: EdgeInsets.all(isMobile ? 8 : 12),
               decoration: BoxDecoration(
                 color: CyberpunkColors.primaryOrange.withOpacity(0.2),
                 borderRadius: BorderRadius.circular(12),
@@ -312,13 +319,12 @@ class _ProjectCardState extends State<ProjectCard>
               child: Icon(
                 _getProjectIcon(),
                 color: CyberpunkColors.primaryOrange,
-                size: 24,
+                size: isMobile ? 20 : 24, // Ícone menor no mobile
               ),
             );
           },
         ),
-
-        SizedBox(width: 16),
+        SizedBox(width: isMobile ? 12 : 16),
 
         // Título e status
         Expanded(
@@ -333,7 +339,7 @@ class _ProjectCardState extends State<ProjectCard>
                         CyberpunkColors.glowYellow,
                         _hoverAnimation.value,
                       )!,
-                  fontSize: 18,
+                  fontSize: isMobile ? 16 : 18, // Fonte menor no mobile
                   fontWeight: FontWeight.bold,
                   letterSpacing: 0.8,
                 ),
@@ -389,37 +395,43 @@ class _ProjectCardState extends State<ProjectCard>
     );
   }
 
-  Widget _buildDescription() {
-    return AnimatedDefaultTextStyle(
-      style: TextStyle(
-        color:
-            Color.lerp(
-              Colors.white70,
-              Colors.white,
-              _hoverAnimation.value * 0.5,
-            )!,
-        fontSize: 14,
-        height: 1.5,
-        letterSpacing: 0.3,
-      ),
-      duration: Duration(milliseconds: 300),
-      child: Text(
-        widget.project.subtitle,
-        maxLines: 3,
-        overflow: TextOverflow.ellipsis,
-      ),
-    );
-  }
+Widget _buildDescription() {
+  final screenWidth = MediaQuery.of(context).size.width;
+  final isMobile = screenWidth < 600;
+  
+  return AnimatedDefaultTextStyle(
+    style: TextStyle(
+      color: Color.lerp(
+        Colors.white70,
+        Colors.white,
+        _hoverAnimation.value * 0.5,
+      )!,
+      fontSize: isMobile ? 12 : 14, // Fonte menor no mobile
+      height: 1.5,
+      letterSpacing: 0.3,
+    ),
+    duration: Duration(milliseconds: 300),
+    child: Text(
+      widget.project.subtitle,
+      maxLines: isMobile ? 2 : 3, // Menos linhas no mobile
+      overflow: TextOverflow.ellipsis,
+    ),
+  );
+}
 
-  Widget _buildTechStack() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Container(
-              width: 4,
-              height: 16,
+Widget _buildTechStack() {
+  final screenWidth = MediaQuery.of(context).size.width;
+  final isMobile = screenWidth < 600;
+  
+  
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Row(
+        children: [
+          Container(
+            width: 4,
+            height: isMobile ? 12 : 16,
               decoration: BoxDecoration(
                 color: CyberpunkColors.screenTeal,
                 borderRadius: BorderRadius.circular(2),
@@ -433,69 +445,50 @@ class _ProjectCardState extends State<ProjectCard>
               ),
             ),
             SizedBox(width: 8),
-            Text(
-              'STACK',
-              style: TextStyle(
-                color: CyberpunkColors.screenTeal,
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 1.2,
-              ),
+          Text(
+            'STACK',
+            style: TextStyle(
+              color: CyberpunkColors.screenTeal,
+              fontSize: isMobile ? 10 : 12, // Fonte menor
+              fontWeight: FontWeight.bold,
+              letterSpacing: 1.2,
             ),
-          ],
-        ),
+          ),
+        ],
+      ),
 
-        SizedBox(height: 8),
+      SizedBox(height: 8),
 
-        Wrap(
-          spacing: 8,
-          runSpacing: 6,
-          children:
-              widget.project.tech.take(4).map((tech) {
-                return AnimatedBuilder(
-                  animation: _hoverAnimation,
-                  builder: (context, child) {
-                    return Container(
-                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: CyberpunkColors.darkGray.withOpacity(0.8),
-                        borderRadius: BorderRadius.circular(6),
-                        border: Border.all(
-                          color: CyberpunkColors.screenTeal.withOpacity(
-                            0.3 + _hoverAnimation.value * 0.5,
-                          ),
-                          width: 1,
-                        ),
-                        boxShadow:
-                            _hoverAnimation.value > 0.5
-                                ? [
-                                  BoxShadow(
-                                    color: CyberpunkColors.screenTeal
-                                        .withOpacity(0.3),
-                                    blurRadius: 8,
-                                    spreadRadius: 1,
-                                  ),
-                                ]
-                                : [],
-                      ),
-                      child: Text(
-                        tech,
-                        style: TextStyle(
-                          color: CyberpunkColors.screenTeal,
-                          fontSize: 10,
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                    );
-                  },
-                );
-              }).toList(),
-        ),
-      ],
-    );
-  }
-
+      Wrap(
+        spacing: isMobile ? 6 : 8, // Menos espaçamento no mobile
+        runSpacing: 4,
+        children: widget.project.tech.take(isMobile ? 3 : 4).map((tech) { // Menos tags no mobile
+          return AnimatedBuilder(
+            animation: _hoverAnimation,
+            builder: (context, child) {
+              return Container(
+                padding: EdgeInsets.symmetric(
+                  horizontal: isMobile ? 6 : 8,
+                  vertical: isMobile ? 3 : 4,
+                ),
+                // ... resto da decoração igual
+                child: Text(
+                  tech,
+                  style: TextStyle(
+                    color: CyberpunkColors.screenTeal,
+                    fontSize: isMobile ? 9 : 10, // Fonte menor
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              );
+            },
+          );
+        }).toList(),
+      ),
+    ],
+  );
+}
   Future<void> _showProjectDetails() async {
     HapticFeedback.selectionClick();
 
@@ -669,7 +662,148 @@ class _ProjectCardState extends State<ProjectCard>
     );
   }
 
-  Widget _buildActionRow() {
+Widget _buildActionRow() {
+  final screenWidth = MediaQuery.of(context).size.width;
+  final isMobile = screenWidth < 600;
+  
+  if (isMobile) {
+    // Layout em coluna para mobile
+    return Column(
+      children: [
+        // Botão principal - full width
+        Container(
+          width: double.infinity,
+          child: AnimatedBuilder(
+            animation: _hoverAnimation,
+            builder: (context, child) {
+              return Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(8),
+                  boxShadow: [
+                    BoxShadow(
+                      color: CyberpunkColors.primaryOrange.withOpacity(
+                        _hoverAnimation.value * 0.6,
+                      ),
+                      blurRadius: 15,
+                      spreadRadius: 2,
+                    ),
+                  ],
+                ),
+                child: ElevatedButton(
+                  onPressed: () => _openLink(widget.project.url ?? ''),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Color.lerp(
+                      CyberpunkColors.darkGray,
+                      CyberpunkColors.primaryOrange,
+                      _hoverAnimation.value * 0.8,
+                    ),
+                    foregroundColor: Color.lerp(
+                      CyberpunkColors.primaryOrange,
+                      CyberpunkColors.deepBlack,
+                      _hoverAnimation.value,
+                    ),
+                    padding: EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      side: BorderSide(
+                        color: CyberpunkColors.primaryOrange.withOpacity(
+                          0.8 + _hoverAnimation.value * 0.2,
+                        ),
+                        width: 2,
+                      ),
+                    ),
+                    elevation: 0,
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.launch, size: 16),
+                      SizedBox(width: 8),
+                      Text(
+                        'VIEW PROJECT',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 1.0,
+                          fontSize: 12, // Fonte menor no mobile
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+
+        SizedBox(height: 8), // Espaçamento vertical entre botões
+
+        // Botão secundário - full width no mobile
+        Container(
+          width: double.infinity,
+          child: AnimatedBuilder(
+            animation: _hoverAnimation,
+            builder: (context, child) {
+              return Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(8),
+                  boxShadow: [
+                    BoxShadow(
+                      color: CyberpunkColors.neonBlue.withOpacity(
+                        _hoverAnimation.value * 0.4,
+                      ),
+                      blurRadius: 12,
+                      spreadRadius: 1,
+                    ),
+                  ],
+                ),
+                child: Material(
+                  color: CyberpunkColors.darkGray,
+                  borderRadius: BorderRadius.circular(8),
+                  child: InkWell(
+                    onTap: () => _showProjectDetails(),
+                    borderRadius: BorderRadius.circular(8),
+                    child: Container(
+                      padding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: CyberpunkColors.neonBlue.withOpacity(
+                            0.6 + _hoverAnimation.value * 0.4,
+                          ),
+                          width: 2,
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.info_outline,
+                            color: CyberpunkColors.neonBlue,
+                            size: 16,
+                          ),
+                          SizedBox(width: 8),
+                          Text(
+                            'DETALHES',
+                            style: TextStyle(
+                              color: CyberpunkColors.neonBlue,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 1.0,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  } else {
+    // Layout em linha para desktop (seu código original)
     return Row(
       children: [
         // Botão principal
@@ -785,6 +919,7 @@ class _ProjectCardState extends State<ProjectCard>
       ],
     );
   }
+}
 
   Widget _buildSparkleLayer() {
     return Positioned.fill(
@@ -917,16 +1052,14 @@ class CircuitPatternPainter extends CustomPainter {
   final double animation;
   final double intensity;
 
-  CircuitPatternPainter({
-    required this.animation,
-    required this.intensity,
-  });
+  CircuitPatternPainter({required this.animation, required this.intensity});
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1;
+    final paint =
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1;
 
     // Linhas de circuito
     paint.color = CyberpunkColors.screenTeal.withOpacity(
@@ -936,32 +1069,29 @@ class CircuitPatternPainter extends CustomPainter {
     // Grid pattern
     for (int i = 0; i < 5; i++) {
       final y = size.height * (i / 4);
-      canvas.drawLine(
-        Offset(0, y),
-        Offset(size.width, y),
-        paint,
-      );
+      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
     }
 
     for (int i = 0; i < 3; i++) {
       final x = size.width * (i / 2);
-      canvas.drawLine(
-        Offset(x, 0),
-        Offset(x, size.height),
-        paint,
-      );
+      canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
     }
 
     // Pontos de conexão animados
-    final rawAlpha = (0.3 + math.sin(animation * 2 * math.pi) * 0.3) * intensity;
+    final rawAlpha =
+        (0.3 + math.sin(animation * 2 * math.pi) * 0.3) * intensity;
     final double alpha = rawAlpha.clamp(0.0, 1.0);
 
     paint.style = PaintingStyle.fill;
     paint.color = CyberpunkColors.primaryOrange.withOpacity(alpha);
 
     for (int i = 0; i < 6; i++) {
-      final x = size.width * (i / 5) * (0.8 + math.sin(animation * math.pi + i) * 0.2);
-      final y = size.height * 0.2 * (1 + math.cos(animation * math.pi * 2 + i) * 0.5);
+      final x =
+          size.width *
+          (i / 5) *
+          (0.8 + math.sin(animation * math.pi + i) * 0.2);
+      final y =
+          size.height * 0.2 * (1 + math.cos(animation * math.pi * 2 + i) * 0.5);
       canvas.drawCircle(Offset(x, y), 2, paint);
     }
   }
@@ -975,10 +1105,7 @@ class SparklePainter extends CustomPainter {
   final List<SparkleParticle> sparkles;
   final double animation;
 
-  SparklePainter({
-    required this.sparkles,
-    required this.animation,
-  });
+  SparklePainter({required this.sparkles, required this.animation});
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -1009,7 +1136,6 @@ class SparklePainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
 }
-
 
 // CustomPainter para efeito de scan line
 class ScanLinePainter extends CustomPainter {

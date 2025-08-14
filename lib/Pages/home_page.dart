@@ -147,8 +147,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
           // Overlay com efeito de névoa
           _buildMistOverlay(),
 
-          // Navegação flutuante
-          _buildFloatingNavigation(),
         ],
       ),
     );
@@ -268,33 +266,59 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       duration: Duration(milliseconds: 1500),
       curve: Curves.elasticOut,
       builder: (context, value, child) {
+        final screenWidth = MediaQuery.of(context).size.width;
+        final isMobile = screenWidth < 600;
+        final isTablet = screenWidth >= 600 && screenWidth < 1024;
+
+        // Define o tamanho da fonte baseado no dispositivo
+        double fontSize;
+        if (isMobile) {
+          fontSize = 28; // Muito menor para mobile
+        } else if (isTablet) {
+          fontSize = 48; // Médio para tablet
+        } else {
+          fontSize = 64; // Original para desktop
+        }
+
         return Transform.scale(
           scale: value,
-          child: ShaderMask(
-            shaderCallback: (bounds) {
-              return LinearGradient(
-                colors: [
-                  CyberpunkColors.primaryOrange,
-                  CyberpunkColors.glowYellow,
-                  CyberpunkColors.primaryOrange,
-                ],
-                stops: [0.0, 0.5, 1.0],
-              ).createShader(bounds);
-            },
-            child: Text(
-              profile.fullName,
-              style: TextStyle(
-                fontSize: 64,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-                letterSpacing: 2.0,
-                shadows: [
-                  Shadow(
-                    offset: Offset(0, 0),
-                    blurRadius: 20,
-                    color: CyberpunkColors.primaryOrange.withOpacity(0.8),
+          child: Center(
+            // Centraliza o texto
+            child: FittedBox(
+              // Garante que caiba na tela
+              fit: BoxFit.scaleDown, // Reduz se necessário
+              child: ShaderMask(
+                shaderCallback: (bounds) {
+                  return LinearGradient(
+                    colors: [
+                      CyberpunkColors.primaryOrange,
+                      CyberpunkColors.glowYellow,
+                      CyberpunkColors.primaryOrange,
+                    ],
+                    stops: [0.0, 0.5, 1.0],
+                  ).createShader(bounds);
+                },
+                child: Text(
+                  profile.fullName,
+                  textAlign: TextAlign.center, // Centraliza o texto
+                  maxLines: 1, // Força uma linha só
+                  overflow: TextOverflow.ellipsis, // Caso seja muito longo
+                  style: TextStyle(
+                    fontSize: fontSize,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                    letterSpacing:
+                        isMobile ? 1.0 : 2.0, // Menos espaçamento no mobile
+                    shadows: [
+                      Shadow(
+                        offset: Offset(0, 0),
+                        blurRadius:
+                            isMobile ? 15 : 20, // Sombra menor no mobile
+                        color: CyberpunkColors.primaryOrange.withOpacity(0.8),
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
             ),
           ),
@@ -309,32 +333,81 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       duration: Duration(milliseconds: 2000),
       curve: Curves.easeOut,
       builder: (context, value, child) {
+        final screenWidth = MediaQuery.of(context).size.width;
+        final isMobile = screenWidth < 600;
+        final isTablet = screenWidth >= 600 && screenWidth < 1024;
+
+        // Define tamanhos responsivos
+        double fontSize;
+        double horizontalPadding;
+        double verticalPadding;
+
+        if (isMobile) {
+          fontSize = 16;
+          horizontalPadding = 16;
+          verticalPadding = 8;
+        } else if (isTablet) {
+          fontSize = 20;
+          horizontalPadding = 20;
+          verticalPadding = 10;
+        } else {
+          fontSize = 24;
+          horizontalPadding = 24;
+          verticalPadding = 12;
+        }
+
         return Transform.translate(
-          offset: Offset(0, 50 * (1 - value)),
+          offset: Offset(
+            0,
+            (isMobile ? 30 : 50) * (1 - value),
+          ), // Menos movimento no mobile
           child: Opacity(
             opacity: value,
-            child: Container(
-              padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-              decoration: BoxDecoration(
-                border: Border.all(
-                  color: CyberpunkColors.primaryOrange.withOpacity(0.5),
-                  width: 2,
-                ),
-                borderRadius: BorderRadius.circular(8),
-                boxShadow: [
-                  BoxShadow(
-                    color: CyberpunkColors.primaryOrange.withOpacity(0.3),
-                    blurRadius: 15,
-                    spreadRadius: 2,
+            child: Center(
+              // Centraliza o container
+              child: FittedBox(
+                // Garante que caiba na tela
+                fit: BoxFit.scaleDown,
+                child: Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: horizontalPadding,
+                    vertical: verticalPadding,
                   ),
-                ],
-              ),
-              child: Text(
-                profile.title,
-                style: TextStyle(
-                  fontSize: 24,
-                  color: CyberpunkColors.terminalGreen,
-                  letterSpacing: 1.5,
+                  margin: EdgeInsets.symmetric(
+                    horizontal: isMobile ? 16 : 0, // Margem lateral no mobile
+                  ),
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                      color: CyberpunkColors.primaryOrange.withOpacity(0.5),
+                      width: isMobile ? 1.5 : 2, // Borda mais fina no mobile
+                    ),
+                    borderRadius: BorderRadius.circular(isMobile ? 6 : 8),
+                    boxShadow: [
+                      BoxShadow(
+                        color: CyberpunkColors.primaryOrange.withOpacity(0.3),
+                        blurRadius:
+                            isMobile ? 10 : 15, // Sombra menor no mobile
+                        spreadRadius: isMobile ? 1 : 2,
+                      ),
+                    ],
+                  ),
+                  child: Text(
+                    profile.title,
+                    textAlign: TextAlign.center, // Centraliza o texto
+                    maxLines:
+                        isMobile
+                            ? 2
+                            : 1, // Permite 2 linhas no mobile se necessário
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: fontSize,
+                      color: CyberpunkColors.terminalGreen,
+                      letterSpacing:
+                          isMobile ? 1.0 : 1.5, // Menos espaçamento no mobile
+                      height:
+                          isMobile ? 1.3 : 1.0, // Altura da linha para mobile
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -482,42 +555,76 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
           AnimatedBuilder(
             animation: _glowAnimation,
             builder: (context, child) {
+              final screenWidth = MediaQuery.of(context).size.width;
+              final isMobile = screenWidth < 600;
+
               return Container(
-                width: 8,
-                height: 32,
+                width: isMobile ? 6 : 8, // Barra menor no mobile
+                height: isMobile ? 24 : 32, // Altura menor no mobile
                 decoration: BoxDecoration(
                   color: CyberpunkColors.primaryOrange,
-                  borderRadius: BorderRadius.circular(4),
+                  borderRadius: BorderRadius.circular(isMobile ? 3 : 4),
                   boxShadow: [
                     BoxShadow(
                       color: CyberpunkColors.primaryOrange.withOpacity(
                         _glowAnimation.value,
                       ),
-                      blurRadius: 10,
-                      spreadRadius: 2,
+                      blurRadius: isMobile ? 8 : 10, // Brilho menor no mobile
+                      spreadRadius: isMobile ? 1 : 2,
                     ),
                   ],
                 ),
               );
             },
           ),
-          SizedBox(width: 16),
-          ShaderMask(
-            shaderCallback: (bounds) {
-              return LinearGradient(
-                colors: [
-                  CyberpunkColors.primaryOrange,
-                  CyberpunkColors.glowYellow,
-                ],
-              ).createShader(bounds);
-            },
-            child: Text(
-              title,
-              style: TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-                letterSpacing: 1.2,
+          SizedBox(
+            width: MediaQuery.of(context).size.width < 600 ? 12 : 16,
+          ), // Espaçamento menor no mobile
+          Expanded(
+            // Adiciona Expanded para evitar overflow
+            child: FittedBox(
+              // Garante que o texto caiba
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft, // Mantém alinhamento à esquerda
+              child: ShaderMask(
+                shaderCallback: (bounds) {
+                  return LinearGradient(
+                    colors: [
+                      CyberpunkColors.primaryOrange,
+                      CyberpunkColors.glowYellow,
+                    ],
+                  ).createShader(bounds);
+                },
+                child: Builder(
+                  builder: (context) {
+                    final screenWidth = MediaQuery.of(context).size.width;
+                    final isMobile = screenWidth < 600;
+                    final isTablet = screenWidth >= 600 && screenWidth < 1024;
+
+                    double fontSize;
+                    if (isMobile) {
+                      fontSize = 20; // Bem menor para mobile
+                    } else if (isTablet) {
+                      fontSize = 24; // Médio para tablet
+                    } else {
+                      fontSize = 28; // Original para desktop
+                    }
+
+                    return Text(
+                      title,
+                      maxLines: 1, // Força uma linha só
+                      overflow:
+                          TextOverflow.ellipsis, // Adiciona ... se necessário
+                      style: TextStyle(
+                        fontSize: fontSize,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                        letterSpacing:
+                            isMobile ? 0.8 : 1.2, // Menos espaçamento no mobile
+                      ),
+                    );
+                  },
+                ),
               ),
             ),
           ),
@@ -610,57 +717,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildFloatingNavigation() {
-    return Positioned(
-      top: 50,
-      left: 50,
-      child: AnimatedBuilder(
-        animation: _fadeAnimation,
-        builder: (context, child) {
-          return FadeTransition(
-            opacity: _fadeAnimation,
-            child: Container(
-              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              decoration: BoxDecoration(
-                color: CyberpunkColors.charcoalGray.withOpacity(0.9),
-                borderRadius: BorderRadius.circular(25),
-                border: Border.all(
-                  color: CyberpunkColors.primaryOrange.withOpacity(0.5),
-                  width: 1,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: CyberpunkColors.primaryOrange.withOpacity(0.2),
-                    blurRadius: 15,
-                    spreadRadius: 2,
-                  ),
-                ],
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.shield,
-                    color: CyberpunkColors.primaryOrange,
-                    size: 20,
-                  ),
-                  SizedBox(width: 8),
-                  Text(
-                    'PORTFÓLIO',
-                    style: TextStyle(
-                      color: CyberpunkColors.terminalGreen,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 1.5,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
 
   void _openLink(String url) async {
     HapticFeedback.lightImpact();

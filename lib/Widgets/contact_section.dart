@@ -23,13 +23,6 @@ class ContactSection extends StatelessWidget {
           onPrimaryTap: () => _openEmail(context, profile.email),
           onSecondaryTap: () => _copyToClipboard(context, profile.email, 'Email copiado'),
         ),
-        _ContactCard(
-          icon: Icons.phone_outlined,
-          title: 'Telefone',
-          value: profile.phone,
-          onPrimaryTap: () => _callPhone(context, profile.phone),
-          onSecondaryTap: () => _copyToClipboard(context, profile.phone, 'Telefone copiado'),
-        ),
         if ((profile.linkedin ?? '').isNotEmpty)
           _ContactCard(
             icon: Icons.link,
