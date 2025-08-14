@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "501066809963",
+    "project_id": "skyforge-of-the-crownless",
+    "storage_bucket": "skyforge-of-the-crownless.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:501066809963:android:9e4efb5bac4fabfcf7a72e",
+        "android_client_info": {
+          "package_name": "com.example.portifolio"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC2n3aX4hs5zTqCGkmM_8cHk29RX1LPi8E"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

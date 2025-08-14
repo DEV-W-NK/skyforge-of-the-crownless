@@ -9,6 +9,11 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  firebase_core: ^4.0.0
+  google_fonts: ^4.0.3
+  url_launcher: ^6.1.10
+  flutter_staggered_animations: ^1.0.0
+  animated_text_kit: ^4.2.2
 
 dev_dependencies:
   flutter_test:

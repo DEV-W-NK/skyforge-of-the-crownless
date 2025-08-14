@@ -1,20 +1,24 @@
+// lib/main.dart
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:portifolio/Pages/home_page.dart';
+import 'package:portifolio/Theme/ds3_pallet.dart';
+
 
 void main() {
-  runApp(const MainApp());
+  runApp(SkyforgeApp());
 }
 
-class MainApp extends StatelessWidget {
-  const MainApp({super.key});
-
+class SkyforgeApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
-      home: Scaffold(
-        body: Center(
-          child: Text('Hello World!'),
-        ),
+    return MaterialApp(
+      title: 'Skyforge of the Crownless',
+      theme: CyberpunkTheme.darkTheme.copyWith(
+        textTheme: GoogleFonts.interTextTheme(CyberpunkTheme.darkTheme.textTheme),
       ),
+      home: HomePage(),
+      debugShowCheckedModeBanner: false,
     );
   }
 }
