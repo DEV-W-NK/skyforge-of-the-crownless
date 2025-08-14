@@ -14,13 +14,13 @@ jobs:
 
       - uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.32.0'
+          flutter-version: "3.32.0"
 
       - run: flutter pub get
 
       - run: flutter build web --release
 
-      - uses: w9jds/firebase-action@v1
+      - uses: w9jds/firebase-action@v2
         with:
           args: deploy --only hosting
         env:
