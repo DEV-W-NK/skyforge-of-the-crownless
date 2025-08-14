@@ -1,0 +1,39 @@
+{
+  "hosting": {
+    "public": "build/web",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ]
+  },
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "skyforge-of-the-crownless",
+          "appId": "1:501066809963:android:9e4efb5bac4fabfcf7a72e",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "skyforge-of-the-crownless",
+          "configurations": {
+            "android": "1:501066809963:android:9e4efb5bac4fabfcf7a72e",
+            "ios": "1:501066809963:ios:f68716948c7a475ef7a72e",
+            "macos": "1:501066809963:ios:f68716948c7a475ef7a72e",
+            "web": "1:501066809963:web:015c0ed9023fddfff7a72e",
+            "windows": "1:501066809963:web:775fe3ebe38a028cf7a72e"
+          }
+        }
+      }
+    }
+  }
+}
