@@ -60,7 +60,7 @@ final profile = Profile(
   fullName: 'Guilherme Leonardo de Barros',
   title: 'Desenvolvedor FullStack - Android & Web',
   location: 'São Paulo, SP – Brasil',
-  email: 'guilherme.leonardo.barros@gmail.com',
+  email: 'guileobarros@gmail.com',
   phone: '+55 (11) 91346-7227',
   linkedin: 'https://linkedin.com/in/devw-nk',
   github: 'https://github.com/DEV-W-NK',

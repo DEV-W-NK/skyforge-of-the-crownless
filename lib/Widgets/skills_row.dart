@@ -1,11 +1,14 @@
 // lib/widgets/skills_row.dart
+
 import 'package:flutter/material.dart';
 import 'package:portifolio/Theme/ds3_pallet.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+/// Widget que exibe uma linha de skills (tecnologias) com animações e links externos.
 class SkillsRow extends StatelessWidget {
   final List<String> skills;
 
+  /// [skills] pode ser passado ou usa uma lista padrão.
   SkillsRow({
     Key? key,
     List<String>? skills,
@@ -23,6 +26,7 @@ class SkillsRow extends StatelessWidget {
   }
 }
 
+/// Widget individual para cada skill, com animação de hover/press e link externo.
 class _SkillPill extends StatefulWidget {
   final String skill;
   const _SkillPill({Key? key, required this.skill}) : super(key: key);
@@ -35,7 +39,10 @@ class _SkillPillState extends State<_SkillPill> {
   bool _hover = false;
   bool _pressed = false;
 
+  /// Controla estado de hover.
   void _onEnter(bool v) => setState(() => _hover = v);
+
+  /// Controla estado de pressionado.
   void _onPress(bool v) => setState(() => _pressed = v);
 
   @override
@@ -87,13 +94,13 @@ class _SkillPillState extends State<_SkillPill> {
               borderRadius: BorderRadius.circular(12),
               child: InkWell(
                 borderRadius: BorderRadius.circular(12),
-                onTap: () => _openSkillLink(widget.skill), // agora abre link
+                onTap: () => _openSkillLink(widget.skill), // abre link externo
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      // pequeno marcador vertical colorido
+                      // Marcador vertical colorido
                       Container(
                         width: 6,
                         height: 28,
@@ -106,16 +113,13 @@ class _SkillPillState extends State<_SkillPill> {
                           borderRadius: BorderRadius.circular(6),
                         ),
                       ),
-
                       SizedBox(width: 10),
-
-                      // ícone (opcional)
+                      // Ícone da skill (se houver)
                       if (icon != null) ...[
                         Icon(icon, size: 16, color: CyberpunkColors.screenTeal),
                         SizedBox(width: 8),
                       ],
-
-                      // texto
+                      // Texto da skill com tooltip
                       Tooltip(
                         message: widget.skill,
                         child: Text(
@@ -138,7 +142,7 @@ class _SkillPillState extends State<_SkillPill> {
     );
   }
 
-  // Mapeia skill -> ícone simples (usar ícones nativos para evitar pacotes extras)
+  /// Retorna ícone nativo para a skill.
   IconData? _iconFor(String s) {
     final n = s.toLowerCase();
     if (n.contains('flutter')) return Icons.flutter_dash;
@@ -152,7 +156,7 @@ class _SkillPillState extends State<_SkillPill> {
     return null;
   }
 
-  // Cores de acento por skill (duas cores para gradiente)
+  /// Retorna gradiente de cores para a skill.
   List<Color> _accentFor(String s) {
     final n = s.toLowerCase();
     if (n.contains('flutter') || n.contains('dart')) {
@@ -170,7 +174,7 @@ class _SkillPillState extends State<_SkillPill> {
     return [CyberpunkColors.primaryOrange, CyberpunkColors.neonBlue];
   }
 
-  // Abre o link externo da skill
+  /// Abre o link externo de referência da skill.
   void _openSkillLink(String skill) async {
     final url = _skillUrl(skill);
     if (url != null) {
@@ -181,7 +185,7 @@ class _SkillPillState extends State<_SkillPill> {
     }
   }
 
-  // Mapeia skill para um link externo de referência
+  /// Mapeia skill para um link externo de referência.
   String? _skillUrl(String s) {
     final n = s.toLowerCase();
     if (n.contains('flutter')) return 'https://flutter.dev/';

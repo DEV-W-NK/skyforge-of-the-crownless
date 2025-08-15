@@ -1,4 +1,5 @@
 // lib/pages/home_page.dart
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:math' as math;
@@ -11,37 +12,37 @@ import 'package:portifolio/Widgets/timeline.dart';
 import 'package:portifolio/Widgets/education_section.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+/// Página principal do portfólio/currículo.
+/// Exibe header animado, partículas, experiências, projetos, escolaridade, skills e contato.
 class HomePage extends StatefulWidget {
   @override
   _HomePageState createState() => _HomePageState();
 }
 
+/// Estado da HomePage, responsável por animações e controle de rolagem.
 class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
-  // Remova _parallaxController e _parallaxAnimation
-  // late AnimationController _parallaxController;
-  // late Animation<double> _parallaxAnimation;
+  // Controladores de animação
   late AnimationController _fadeController;
   late AnimationController _particleController;
   late AnimationController _glowController;
 
+  // Animações
   late Animation<double> _fadeAnimation;
   late Animation<double> _particleAnimation;
   late Animation<double> _glowAnimation;
 
+  // Controle de rolagem
   final ScrollController _scrollController = ScrollController();
   double _scrollOffset = 0.0;
+
+  // Lista de partículas para o fundo animado
   List<Particle> _particles = [];
 
   @override
   void initState() {
     super.initState();
 
-    // Remova _parallaxController
-    // _parallaxController = AnimationController(
-    //   duration: Duration(seconds: 20),
-    //   vsync: this,
-    // )..repeat();
-
+    // Inicializa controladores de animação
     _fadeController = AnimationController(
       duration: Duration(seconds: 2),
       vsync: this,
@@ -57,11 +58,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       vsync: this,
     )..repeat(reverse: true);
 
-    // Remova _parallaxAnimation
-    // _parallaxAnimation = Tween<double>(begin: 0.0, end: 2 * math.pi).animate(
-    //   CurvedAnimation(parent: _parallaxController, curve: Curves.linear),
-    // );
-
+    // Inicializa animações
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _fadeController, curve: Curves.easeInOut),
     );
@@ -75,27 +72,28 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       CurvedAnimation(parent: _glowController, curve: Curves.easeInOut),
     );
 
-    // Inicializar partículas (reduzido para 20)
+    // Inicializa partículas do fundo
     _initializeParticles();
 
-    // Listener do scroll
+    // Atualiza offset do scroll para efeito parallax das partículas
     _scrollController.addListener(() {
       setState(() {
         _scrollOffset = _scrollController.offset;
       });
     });
 
-    // Iniciar animação de fade
+    // Inicia animação de fade-in da página
     _fadeController.forward();
 
-    // Vibração sutil ao iniciar
+    // Vibração sutil ao abrir a página
     HapticFeedback.lightImpact();
   }
 
+  /// Inicializa a lista de partículas para o fundo animado.
   void _initializeParticles() {
     final random = math.Random();
     _particles = List.generate(20, (index) {
-      // Reduzido de 50 para 20
+      // Reduzido de 50 para 20 para melhor desempenho
       return Particle(
         x: random.nextDouble(),
         y: random.nextDouble(),
@@ -108,8 +106,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
 
   @override
   void dispose() {
-    // Remova _parallaxController.dispose();
-    // _parallaxController.dispose();
     _fadeController.dispose();
     _particleController.dispose();
     _glowController.dispose();
@@ -125,10 +121,10 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     return Scaffold(
       body: Stack(
         children: [
-          // Background com partículas animadas
+          // Fundo animado com partículas
           _buildAnimatedBackground(),
 
-          // Conteúdo principal
+          // Conteúdo principal com rolagem
           SingleChildScrollView(
             controller: _scrollController,
             physics: BouncingScrollPhysics(),
@@ -149,13 +145,14 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
             ),
           ),
 
-          // Overlay com efeito de névoa
+          // Overlay de névoa para efeito visual
           _buildMistOverlay(),
         ],
       ),
     );
   }
 
+  /// Fundo animado com partículas e gradiente radial.
   Widget _buildAnimatedBackground() {
     return AnimatedBuilder(
       animation: _particleAnimation,
@@ -187,12 +184,13 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     );
   }
 
+  /// Header com gradiente, título animado, subtítulo e botões de redes sociais.
   Widget _buildParallaxHeader(bool isWide) {
     return SizedBox(
       height: MediaQuery.of(context).size.height * 0.9,
       child: Stack(
         children: [
-          // Background estático sem movimento parallax
+          // Gradiente de fundo do header
           Positioned.fill(
             child: Container(
               decoration: BoxDecoration(
@@ -209,7 +207,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
             ),
           ),
 
-          // Conteúdo do header com animações
+          // Conteúdo centralizado: nome, título, botões
           Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -223,7 +221,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
             ),
           ),
 
-          // Efeito de brilho no canto
+          // Efeito de brilho circular no canto superior direito
           Positioned(
             top: 50,
             right: 50,
@@ -253,6 +251,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     );
   }
 
+  /// Título animado com efeito de escala e gradiente.
   Widget _buildAnimatedTitle() {
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.0, end: 1.0),
@@ -266,20 +265,18 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
         // Define o tamanho da fonte baseado no dispositivo
         double fontSize;
         if (isMobile) {
-          fontSize = 28; // Muito menor para mobile
+          fontSize = 28;
         } else if (isTablet) {
-          fontSize = 48; // Médio para tablet
+          fontSize = 48;
         } else {
-          fontSize = 64; // Original para desktop
+          fontSize = 64;
         }
 
         return Transform.scale(
           scale: value,
           child: Center(
-            // Centraliza o texto
             child: FittedBox(
-              // Garante que caiba na tela
-              fit: BoxFit.scaleDown, // Reduz se necessário
+              fit: BoxFit.scaleDown,
               child: ShaderMask(
                 shaderCallback: (bounds) {
                   return LinearGradient(
@@ -293,20 +290,18 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                 },
                 child: Text(
                   profile.fullName,
-                  textAlign: TextAlign.center, // Centraliza o texto
-                  maxLines: 1, // Força uma linha só
-                  overflow: TextOverflow.ellipsis, // Caso seja muito longo
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     fontSize: fontSize,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
-                    letterSpacing:
-                        isMobile ? 1.0 : 2.0, // Menos espaçamento no mobile
+                    letterSpacing: isMobile ? 1.0 : 2.0,
                     shadows: [
                       Shadow(
                         offset: Offset(0, 0),
-                        blurRadius:
-                            isMobile ? 15 : 20, // Sombra menor no mobile
+                        blurRadius: isMobile ? 15 : 20,
                         color: CyberpunkColors.primaryOrange.withOpacity(0.8),
                       ),
                     ],
@@ -320,6 +315,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     );
   }
 
+  /// Subtítulo animado com efeito de translação e opacidade.
   Widget _buildAnimatedSubtitle() {
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.0, end: 1.0),
@@ -330,7 +326,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
         final isMobile = screenWidth < 600;
         final isTablet = screenWidth >= 600 && screenWidth < 1024;
 
-        // Define tamanhos responsivos
         double fontSize;
         double horizontalPadding;
         double verticalPadding;
@@ -353,13 +348,11 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
           offset: Offset(
             0,
             (isMobile ? 30 : 50) * (1 - value),
-          ), // Menos movimento no mobile
+          ),
           child: Opacity(
             opacity: value,
             child: Center(
-              // Centraliza o container
               child: FittedBox(
-                // Garante que caiba na tela
                 fit: BoxFit.scaleDown,
                 child: Container(
                   padding: EdgeInsets.symmetric(
@@ -367,38 +360,32 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                     vertical: verticalPadding,
                   ),
                   margin: EdgeInsets.symmetric(
-                    horizontal: isMobile ? 16 : 0, // Margem lateral no mobile
+                    horizontal: isMobile ? 16 : 0,
                   ),
                   decoration: BoxDecoration(
                     border: Border.all(
                       color: CyberpunkColors.primaryOrange.withOpacity(0.5),
-                      width: isMobile ? 1.5 : 2, // Borda mais fina no mobile
+                      width: isMobile ? 1.5 : 2,
                     ),
                     borderRadius: BorderRadius.circular(isMobile ? 6 : 8),
                     boxShadow: [
                       BoxShadow(
                         color: CyberpunkColors.primaryOrange.withOpacity(0.3),
-                        blurRadius:
-                            isMobile ? 10 : 15, // Sombra menor no mobile
+                        blurRadius: isMobile ? 10 : 15,
                         spreadRadius: isMobile ? 1 : 2,
                       ),
                     ],
                   ),
                   child: Text(
                     profile.title,
-                    textAlign: TextAlign.center, // Centraliza o texto
-                    maxLines:
-                        isMobile
-                            ? 2
-                            : 1, // Permite 2 linhas no mobile se necessário
+                    textAlign: TextAlign.center,
+                    maxLines: isMobile ? 2 : 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       fontSize: fontSize,
                       color: CyberpunkColors.terminalGreen,
-                      letterSpacing:
-                          isMobile ? 1.0 : 1.5, // Menos espaçamento no mobile
-                      height:
-                          isMobile ? 1.3 : 1.0, // Altura da linha para mobile
+                      letterSpacing: isMobile ? 1.0 : 1.5,
+                      height: isMobile ? 1.3 : 1.0,
                     ),
                   ),
                 ),
@@ -410,6 +397,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     );
   }
 
+  /// Botões animados para GitHub e LinkedIn.
   Widget _buildGlowingButtons() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -429,6 +417,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     );
   }
 
+  /// Botão com efeito de brilho animado.
   Widget _buildGlowingButton(
     String text,
     IconData icon,
@@ -488,6 +477,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     );
   }
 
+  /// Conteúdo principal da página: sobre, experiência, projetos, escolaridade, skills, contato.
   Widget _buildMainContent(bool isWide) {
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: isWide ? 72 : 16),
@@ -504,7 +494,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
           SizedBox(height: 64),
           _buildAnimatedSection('Projetos', _buildProjectsSection(isWide), 400),
           SizedBox(height: 64),
-          // Adicione a seção de escolaridade aqui
+          // Seção de escolaridade
           _buildAnimatedSection(
             'Escolaridade',
             EducationSection(
@@ -543,6 +533,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     );
   }
 
+  /// Seção animada com título e conteúdo.
   Widget _buildAnimatedSection(String title, Widget content, double delay) {
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.0, end: 1.0),
@@ -567,6 +558,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     );
   }
 
+  /// Título de seção com barra lateral animada e gradiente.
   Widget _buildSectionTitle(String title) {
     return Container(
       child: Row(
@@ -578,8 +570,8 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
               final isMobile = screenWidth < 600;
 
               return Container(
-                width: isMobile ? 6 : 8, // Barra menor no mobile
-                height: isMobile ? 24 : 32, // Altura menor no mobile
+                width: isMobile ? 6 : 8,
+                height: isMobile ? 24 : 32,
                 decoration: BoxDecoration(
                   color: CyberpunkColors.primaryOrange,
                   borderRadius: BorderRadius.circular(isMobile ? 3 : 4),
@@ -588,7 +580,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                       color: CyberpunkColors.primaryOrange.withOpacity(
                         _glowAnimation.value,
                       ),
-                      blurRadius: isMobile ? 8 : 10, // Brilho menor no mobile
+                      blurRadius: isMobile ? 8 : 10,
                       spreadRadius: isMobile ? 1 : 2,
                     ),
                   ],
@@ -598,13 +590,11 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
           ),
           SizedBox(
             width: MediaQuery.of(context).size.width < 600 ? 12 : 16,
-          ), // Espaçamento menor no mobile
+          ),
           Expanded(
-            // Adiciona Expanded para evitar overflow
             child: FittedBox(
-              // Garante que o texto caiba
               fit: BoxFit.scaleDown,
-              alignment: Alignment.centerLeft, // Mantém alinhamento à esquerda
+              alignment: Alignment.centerLeft,
               child: ShaderMask(
                 shaderCallback: (bounds) {
                   return LinearGradient(
@@ -652,6 +642,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     );
   }
 
+  /// Seção "Sobre mim" com descrição.
   Widget _buildAboutSection() {
     return Container(
       padding: EdgeInsets.all(24),
@@ -684,14 +675,15 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     );
   }
 
+  /// Seção de projetos: grid no desktop/tablet, lista centralizada no mobile.
   Widget _buildProjectsSection(bool isWide) {
     final double cardWidth = isWide ? 320 : 340;
     final double cardHeight = isWide ? 370 : 400;
 
     if (isWide) {
-      // Desktop/tablet: mantém Wrap
+      // Desktop/tablet: grid responsivo
       return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8.0), // padding externo
+        padding: const EdgeInsets.symmetric(horizontal: 8.0),
         child: Wrap(
           spacing: 16,
           runSpacing: 16,
@@ -700,7 +692,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                 final index = entry.key;
                 final project = entry.value;
                 return Padding(
-                  padding: const EdgeInsets.all(4.0), // padding interno
+                  padding: const EdgeInsets.all(4.0),
                   child: TweenAnimationBuilder<double>(
                     tween: Tween(begin: 0.0, end: 1.0),
                     duration: Duration(milliseconds: 800 + (index * 200)),
@@ -721,9 +713,9 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
         ),
       );
     } else {
-      // Mobile: use ListView.builder para renderização eficiente
+      // Mobile: lista centralizada, renderização eficiente
       return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8.0), // padding externo
+        padding: const EdgeInsets.symmetric(horizontal: 8.0),
         child: ListView.builder(
           shrinkWrap: true,
           physics: NeverScrollableScrollPhysics(),
@@ -731,7 +723,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
           itemBuilder: (context, index) {
             final project = projects[index];
             return Padding(
-              padding: const EdgeInsets.only(bottom: 20.0, top: 4.0), // padding entre cards
+              padding: const EdgeInsets.only(bottom: 20.0, top: 4.0),
               child: TweenAnimationBuilder<double>(
                 tween: Tween(begin: 0.0, end: 1.0),
                 duration: Duration(milliseconds: 800 + (index * 200)),
@@ -757,10 +749,11 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     }
   }
 
+  /// Overlay de névoa animada para efeito visual.
   Widget _buildMistOverlay() {
     return IgnorePointer(
       child: AnimatedBuilder(
-        animation: _glowAnimation, // Use _glowAnimation para menos repaints
+        animation: _glowAnimation,
         builder: (context, child) {
           return Container(
             height: MediaQuery.of(context).size.height,
@@ -782,6 +775,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     );
   }
 
+  /// Abre um link externo (GitHub, LinkedIn, etc).
   void _openLink(String url) async {
     HapticFeedback.lightImpact();
     final uri = Uri.parse(url);
@@ -791,7 +785,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   }
 }
 
-// Classe para representar partículas
+/// Classe para representar partículas do fundo animado.
 class Particle {
   double x;
   double y;
@@ -807,6 +801,7 @@ class Particle {
     required this.opacity,
   });
 
+  /// Atualiza a posição da partícula (movimento para cima).
   void update() {
     y -= speed;
     if (y < 0) {
@@ -816,7 +811,7 @@ class Particle {
   }
 }
 
-// CustomPainter para partículas
+/// CustomPainter para desenhar partículas animadas e linhas de conexão.
 class ParticlesPainter extends CustomPainter {
   final List<Particle> particles;
   final double animation;
@@ -832,7 +827,7 @@ class ParticlesPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final paint = Paint();
 
-    // Atualize as partículas apenas se a animação mudou
+    // Desenha partículas
     for (final particle in particles) {
       particle.update();
       paint.color = CyberpunkColors.primaryOrange.withOpacity(particle.opacity);
@@ -845,7 +840,7 @@ class ParticlesPainter extends CustomPainter {
       canvas.drawCircle(Offset(dx, dy), particle.size, paint);
     }
 
-    // Desenhar poucas linhas conectoras (máximo 2 por partícula)
+    // Desenha linhas de conexão entre partículas próximas
     paint.color = CyberpunkColors.primaryOrange.withOpacity(0.1);
     paint.strokeWidth = 1;
 
@@ -865,7 +860,7 @@ class ParticlesPainter extends CustomPainter {
         );
 
         if (distance < 80) {
-          // Reduzido de 100 para 80
+          // Reduzido de 100 para 80 para desempenho
           canvas.drawLine(Offset(dx1, dy1), Offset(dx2, dy2), paint);
           connections++;
         }
