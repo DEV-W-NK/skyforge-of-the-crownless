@@ -5,6 +5,7 @@ import 'package:portifolio/Models/resume_models.dart';
 import 'package:portifolio/Theme/ds3_pallet.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'dart:math' as math;
+import 'package:visibility_detector/visibility_detector.dart';
 
 class ProjectCard extends StatefulWidget {
   final Project project;
@@ -32,6 +33,7 @@ class _ProjectCardState extends State<ProjectCard>
   
 
   bool _isHovered = false;
+  bool _isVisible = true; // novo
   List<SparkleParticle> _sparkles = [];
 
   @override
@@ -174,7 +176,7 @@ class _ProjectCardState extends State<ProjectCard>
       _hoverController.forward();
     }
 
-    return MouseRegion(
+    Widget card = MouseRegion(
       onEnter: (_) => _onHover(true),
       onExit: (_) => _onHover(false),
       child: GestureDetector(
@@ -215,6 +217,30 @@ class _ProjectCardState extends State<ProjectCard>
         ),
       ),
     );
+
+    // Só ativa/pause animações no mobile (desktop ignora)
+    if (isMobile) {
+      return VisibilityDetector(
+        key: ValueKey(widget.project.title),
+        onVisibilityChanged: (info) {
+          final visible = info.visibleFraction > 0.01;
+          if (visible && !_isVisible) {
+            _isVisible = true;
+            _glowController.repeat(reverse: true);
+            _sparkleController.repeat();
+            _pulseController.repeat(reverse: true);
+          } else if (!visible && _isVisible) {
+            _isVisible = false;
+            _glowController.stop();
+            _sparkleController.stop();
+            _pulseController.stop();
+          }
+        },
+        child: card,
+      );
+    } else {
+      return card;
+    }
   }
 
   Widget _buildMainCard() {

@@ -94,7 +94,8 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
 
   void _initializeParticles() {
     final random = math.Random();
-    _particles = List.generate(20, (index) { // Reduzido de 50 para 20
+    _particles = List.generate(20, (index) {
+      // Reduzido de 50 para 20
       return Particle(
         x: random.nextDouble(),
         y: random.nextDouble(),
@@ -150,7 +151,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
 
           // Overlay com efeito de névoa
           _buildMistOverlay(),
-
         ],
       ),
     );
@@ -511,7 +511,8 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
               educationList: [
                 Education(
                   degree: 'Bacharelado em Engenharia da Computação',
-                  institution: 'Universidade Virtual do Estado de São Paulo (UNIVESP)',
+                  institution:
+                      'Universidade Virtual do Estado de São Paulo (UNIVESP)',
                   period: '2025 – 2030',
                 ),
                 Education(
@@ -520,7 +521,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                   period: '2023 – 2024',
                 ),
                 Education(
-                  degree: 'Curso de Mecatronica',
+                  degree: 'Curso de Mecatrônica',
                   institution: 'Alura',
                   period: '2023 – 2024',
                 ),
@@ -670,8 +671,9 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
         ],
       ),
       child: Text(
-        'Sou desenvolvedor apaixonado por tecnologia, com foco em Flutter, Android (Java) e C++. '
-        'Trabalho com soluções mobile, IoT e backend serverless. Busco projetos que misturem design e eficiência.',
+        'Desenvolvedor apaixonado por tecnologia, especializado em Flutter, Android (Java) e C++. '
+        'Atuo no desenvolvimento de soluções mobile, integrações IoT e backends serverless, unindo desempenho e inovação. '
+        'Busco criar projetos que aliem design refinado, eficiência e experiências marcantes para o usuário.',
         style: TextStyle(
           fontSize: 18,
           color: CyberpunkColors.terminalGreen,
@@ -683,37 +685,76 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   }
 
   Widget _buildProjectsSection(bool isWide) {
-    // Defina tamanhos fixos para os cards
     final double cardWidth = isWide ? 320 : 340;
     final double cardHeight = isWide ? 370 : 400;
 
-    return Wrap(
-      spacing: 16,
-      runSpacing: 16,
-      children:
-          projects.asMap().entries.map((entry) {
-            final index = entry.key;
-            final project = entry.value;
-            return TweenAnimationBuilder<double>(
-              tween: Tween(begin: 0.0, end: 1.0),
-              duration: Duration(milliseconds: 800 + (index * 200)),
-              curve: Curves.elasticOut,
-              builder: (context, value, child) {
-                return Transform.scale(
-                  scale: value,
-                  child: SizedBox(
-                    width: cardWidth,
-                    height: cardHeight,
-                    child: ProjectCard(
-                      project: project,
-                      width: cardWidth,
-                    ),
+    if (isWide) {
+      // Desktop/tablet: mantém Wrap
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8.0), // padding externo
+        child: Wrap(
+          spacing: 16,
+          runSpacing: 16,
+          children:
+              projects.asMap().entries.map((entry) {
+                final index = entry.key;
+                final project = entry.value;
+                return Padding(
+                  padding: const EdgeInsets.all(4.0), // padding interno
+                  child: TweenAnimationBuilder<double>(
+                    tween: Tween(begin: 0.0, end: 1.0),
+                    duration: Duration(milliseconds: 800 + (index * 200)),
+                    curve: Curves.elasticOut,
+                    builder: (context, value, child) {
+                      return Transform.scale(
+                        scale: value,
+                        child: SizedBox(
+                          width: cardWidth,
+                          height: cardHeight,
+                          child: ProjectCard(project: project, width: cardWidth),
+                        ),
+                      );
+                    },
                   ),
                 );
-              },
+              }).toList(),
+        ),
+      );
+    } else {
+      // Mobile: use ListView.builder para renderização eficiente
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8.0), // padding externo
+        child: ListView.builder(
+          shrinkWrap: true,
+          physics: NeverScrollableScrollPhysics(),
+          itemCount: projects.length,
+          itemBuilder: (context, index) {
+            final project = projects[index];
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 20.0, top: 4.0), // padding entre cards
+              child: TweenAnimationBuilder<double>(
+                tween: Tween(begin: 0.0, end: 1.0),
+                duration: Duration(milliseconds: 800 + (index * 200)),
+                curve: Curves.elasticOut,
+                builder: (context, value, child) {
+                  return Align(
+                    alignment: Alignment.center,
+                    child: Transform.scale(
+                      scale: value,
+                      child: SizedBox(
+                        width: cardWidth,
+                        height: cardHeight,
+                        child: ProjectCard(project: project, width: cardWidth),
+                      ),
+                    ),
+                  );
+                },
+              ),
             );
-          }).toList(),
-    );
+          },
+        ),
+      );
+    }
   }
 
   Widget _buildMistOverlay() {
@@ -728,9 +769,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: [
-                  Colors.black.withOpacity(
-                    0.1 + _glowAnimation.value * 0.05,
-                  ),
+                  Colors.black.withOpacity(0.1 + _glowAnimation.value * 0.05),
                   Colors.transparent,
                   Colors.transparent,
                   Colors.black.withOpacity(0.2),
@@ -742,7 +781,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       ),
     );
   }
-
 
   void _openLink(String url) async {
     HapticFeedback.lightImpact();
@@ -826,7 +864,8 @@ class ParticlesPainter extends CustomPainter {
           math.pow(dx2 - dx1, 2) + math.pow(dy2 - dy1, 2),
         );
 
-        if (distance < 80) { // Reduzido de 100 para 80
+        if (distance < 80) {
+          // Reduzido de 100 para 80
           canvas.drawLine(Offset(dx1, dy1), Offset(dx2, dy2), paint);
           connections++;
         }
