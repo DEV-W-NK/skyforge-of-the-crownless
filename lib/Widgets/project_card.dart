@@ -166,6 +166,14 @@ class _ProjectCardState extends State<ProjectCard>
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
+    final isMobile = screenWidth < 600;
+
+    // Sempre "hover" no mobile
+    if (isMobile && !_isHovered) {
+      _isHovered = true;
+      _hoverController.forward();
+    }
+
     return MouseRegion(
       onEnter: (_) => _onHover(true),
       onExit: (_) => _onHover(false),
@@ -191,13 +199,13 @@ class _ProjectCardState extends State<ProjectCard>
                       _buildMainCard(),
 
                       // Partículas brilhantes
-                      if (_isHovered) _buildSparkleLayer(),
+                      if (_isHovered || isMobile) _buildSparkleLayer(),
 
                       // Overlay de brilho
                       _buildGlowOverlay(),
 
                       // Efeito de scan line
-                      if (_isHovered) _buildScanLineEffect(),
+                      if ((_isHovered || isMobile)) _buildScanLineEffect(),
                     ],
                   ),
                 ),
@@ -210,8 +218,8 @@ class _ProjectCardState extends State<ProjectCard>
   }
 
   Widget _buildMainCard() {
-      final screenWidth = MediaQuery.of(context).size.width;
-  final isMobile = screenWidth < 600; // Adicione esta linha
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isMobile = screenWidth < 600;
     return Container(
       decoration: BoxDecoration(
         color: CyberpunkColors.charcoalGray,
@@ -252,13 +260,22 @@ class _ProjectCardState extends State<ProjectCard>
               padding: EdgeInsets.all(isMobile ? 16 : 20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween, // força ocupar altura
                 children: [
-                  _buildHeader(),
-                  SizedBox(height: 16),
-                  _buildDescription(),
-                  SizedBox(height: 20),
-                  _buildTechStack(),
-                  SizedBox(height: 24),
+                  // Conteúdo principal
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildHeader(),
+                        SizedBox(height: 16),
+                        _buildDescription(),
+                        SizedBox(height: 20),
+                        _buildTechStack(),
+                      ],
+                    ),
+                  ),
+                  // Ações sempre no rodapé
                   _buildActionRow(),
                 ],
               ),

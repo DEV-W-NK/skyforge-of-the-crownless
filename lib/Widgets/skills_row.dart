@@ -1,6 +1,7 @@
 // lib/widgets/skills_row.dart
 import 'package:flutter/material.dart';
 import 'package:portifolio/Theme/ds3_pallet.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class SkillsRow extends StatelessWidget {
   final List<String> skills;
@@ -86,7 +87,7 @@ class _SkillPillState extends State<_SkillPill> {
               borderRadius: BorderRadius.circular(12),
               child: InkWell(
                 borderRadius: BorderRadius.circular(12),
-                onTap: () {}, // sem ação por enquanto (apenas visual)
+                onTap: () => _openSkillLink(widget.skill), // agora abre link
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
                   child: Row(
@@ -167,5 +168,30 @@ class _SkillPillState extends State<_SkillPill> {
       return [CyberpunkColors.terminalGreen, CyberpunkColors.screenTeal];
     }
     return [CyberpunkColors.primaryOrange, CyberpunkColors.neonBlue];
+  }
+
+  // Abre o link externo da skill
+  void _openSkillLink(String skill) async {
+    final url = _skillUrl(skill);
+    if (url != null) {
+      final uri = Uri.parse(url);
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      }
+    }
+  }
+
+  // Mapeia skill para um link externo de referência
+  String? _skillUrl(String s) {
+    final n = s.toLowerCase();
+    if (n.contains('flutter')) return 'https://flutter.dev/';
+    if (n.contains('dart')) return 'https://dart.dev/';
+    if (n.contains('java')) return 'https://www.java.com/';
+    if (n.contains('c++')) return 'https://isocpp.org/';
+    if (n.contains('firebase')) return 'https://firebase.google.com/';
+    if (n.contains('node')) return 'https://nodejs.org/';
+    if (n.contains('mqtt')) return 'https://mqtt.org/';
+    if (n.contains('esp')) return 'https://www.espressif.com/en/products/socs/esp32';
+    return null;
   }
 }

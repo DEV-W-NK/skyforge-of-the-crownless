@@ -8,6 +8,8 @@ import 'package:portifolio/Widgets/contact_section.dart';
 import 'package:portifolio/Widgets/project_card.dart';
 import 'package:portifolio/Widgets/skills_row.dart';
 import 'package:portifolio/Widgets/timeline.dart';
+import 'package:portifolio/Widgets/education_section.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class HomePage extends StatefulWidget {
   @override
@@ -15,12 +17,13 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
-  late AnimationController _parallaxController;
+  // Remova _parallaxController e _parallaxAnimation
+  // late AnimationController _parallaxController;
+  // late Animation<double> _parallaxAnimation;
   late AnimationController _fadeController;
   late AnimationController _particleController;
   late AnimationController _glowController;
 
-  late Animation<double> _parallaxAnimation;
   late Animation<double> _fadeAnimation;
   late Animation<double> _particleAnimation;
   late Animation<double> _glowAnimation;
@@ -33,11 +36,11 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   void initState() {
     super.initState();
 
-    // Inicializar controladores de animação
-    _parallaxController = AnimationController(
-      duration: Duration(seconds: 20),
-      vsync: this,
-    )..repeat();
+    // Remova _parallaxController
+    // _parallaxController = AnimationController(
+    //   duration: Duration(seconds: 20),
+    //   vsync: this,
+    // )..repeat();
 
     _fadeController = AnimationController(
       duration: Duration(seconds: 2),
@@ -54,10 +57,10 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       vsync: this,
     )..repeat(reverse: true);
 
-    // Configurar animações
-    _parallaxAnimation = Tween<double>(begin: 0.0, end: 2 * math.pi).animate(
-      CurvedAnimation(parent: _parallaxController, curve: Curves.linear),
-    );
+    // Remova _parallaxAnimation
+    // _parallaxAnimation = Tween<double>(begin: 0.0, end: 2 * math.pi).animate(
+    //   CurvedAnimation(parent: _parallaxController, curve: Curves.linear),
+    // );
 
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _fadeController, curve: Curves.easeInOut),
@@ -72,7 +75,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       CurvedAnimation(parent: _glowController, curve: Curves.easeInOut),
     );
 
-    // Inicializar partículas
+    // Inicializar partículas (reduzido para 20)
     _initializeParticles();
 
     // Listener do scroll
@@ -91,7 +94,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
 
   void _initializeParticles() {
     final random = math.Random();
-    _particles = List.generate(50, (index) {
+    _particles = List.generate(20, (index) { // Reduzido de 50 para 20
       return Particle(
         x: random.nextDouble(),
         y: random.nextDouble(),
@@ -104,7 +107,8 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
 
   @override
   void dispose() {
-    _parallaxController.dispose();
+    // Remova _parallaxController.dispose();
+    // _parallaxController.dispose();
     _fadeController.dispose();
     _particleController.dispose();
     _glowController.dispose();
@@ -154,7 +158,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
 
   Widget _buildAnimatedBackground() {
     return AnimatedBuilder(
-      animation: Listenable.merge([_parallaxAnimation, _particleAnimation]),
+      animation: _particleAnimation,
       builder: (context, child) {
         return Container(
           height: MediaQuery.of(context).size.height,
@@ -184,35 +188,24 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   }
 
   Widget _buildParallaxHeader(bool isWide) {
-    return Container(
+    return SizedBox(
       height: MediaQuery.of(context).size.height * 0.9,
       child: Stack(
         children: [
-          // Background com movimento parallax
+          // Background estático sem movimento parallax
           Positioned.fill(
-            child: AnimatedBuilder(
-              animation: _parallaxAnimation,
-              builder: (context, child) {
-                return Transform.translate(
-                  offset: Offset(
-                    math.sin(_parallaxAnimation.value) * 20,
-                    math.cos(_parallaxAnimation.value) * 10,
-                  ),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          CyberpunkColors.primaryOrange.withOpacity(0.3),
-                          CyberpunkColors.deepOrange.withOpacity(0.2),
-                          Colors.transparent,
-                        ],
-                      ),
-                    ),
-                  ),
-                );
-              },
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    CyberpunkColors.primaryOrange.withOpacity(0.3),
+                    CyberpunkColors.deepOrange.withOpacity(0.2),
+                    Colors.transparent,
+                  ],
+                ),
+              ),
             ),
           ),
 
@@ -511,6 +504,31 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
           SizedBox(height: 64),
           _buildAnimatedSection('Projetos', _buildProjectsSection(isWide), 400),
           SizedBox(height: 64),
+          // Adicione a seção de escolaridade aqui
+          _buildAnimatedSection(
+            'Escolaridade',
+            EducationSection(
+              educationList: [
+                Education(
+                  degree: 'Bacharelado em Engenharia da Computação',
+                  institution: 'Universidade Virtual do Estado de São Paulo (UNIVESP)',
+                  period: '2025 – 2030',
+                ),
+                Education(
+                  degree: 'Técnico em Desenvolvimento de Sistemas',
+                  institution: 'Etec Professor Basilides de Godoy',
+                  period: '2023 – 2024',
+                ),
+                Education(
+                  degree: 'Curso de Mecatronica',
+                  institution: 'Alura',
+                  period: '2023 – 2024',
+                ),
+              ],
+            ),
+            500,
+          ),
+          SizedBox(height: 64),
           _buildAnimatedSection('Skills', SkillsRow(), 600),
           SizedBox(height: 64),
           _buildAnimatedSection(
@@ -665,6 +683,10 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   }
 
   Widget _buildProjectsSection(bool isWide) {
+    // Defina tamanhos fixos para os cards
+    final double cardWidth = isWide ? 320 : 340;
+    final double cardHeight = isWide ? 370 : 400;
+
     return Wrap(
       spacing: 16,
       runSpacing: 16,
@@ -679,9 +701,13 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
               builder: (context, value, child) {
                 return Transform.scale(
                   scale: value,
-                  child: ProjectCard(
-                    project: project,
-                    width: isWide ? 320 : double.infinity,
+                  child: SizedBox(
+                    width: cardWidth,
+                    height: cardHeight,
+                    child: ProjectCard(
+                      project: project,
+                      width: cardWidth,
+                    ),
                   ),
                 );
               },
@@ -693,7 +719,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   Widget _buildMistOverlay() {
     return IgnorePointer(
       child: AnimatedBuilder(
-        animation: _parallaxAnimation,
+        animation: _glowAnimation, // Use _glowAnimation para menos repaints
         builder: (context, child) {
           return Container(
             height: MediaQuery.of(context).size.height,
@@ -703,7 +729,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                 end: Alignment.bottomCenter,
                 colors: [
                   Colors.black.withOpacity(
-                    0.1 + math.sin(_parallaxAnimation.value) * 0.05,
+                    0.1 + _glowAnimation.value * 0.05,
                   ),
                   Colors.transparent,
                   Colors.transparent,
@@ -720,7 +746,10 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
 
   void _openLink(String url) async {
     HapticFeedback.lightImpact();
-    // Implementar abertura de URL
+    final uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
   }
 }
 
@@ -765,9 +794,9 @@ class ParticlesPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final paint = Paint();
 
+    // Atualize as partículas apenas se a animação mudou
     for (final particle in particles) {
       particle.update();
-
       paint.color = CyberpunkColors.primaryOrange.withOpacity(particle.opacity);
 
       final dx =
@@ -778,12 +807,13 @@ class ParticlesPainter extends CustomPainter {
       canvas.drawCircle(Offset(dx, dy), particle.size, paint);
     }
 
-    // Desenhar algumas linhas conectoras
+    // Desenhar poucas linhas conectoras (máximo 2 por partícula)
     paint.color = CyberpunkColors.primaryOrange.withOpacity(0.1);
     paint.strokeWidth = 1;
 
     for (int i = 0; i < particles.length - 1; i++) {
-      for (int j = i + 1; j < particles.length; j++) {
+      int connections = 0;
+      for (int j = i + 1; j < particles.length && connections < 2; j++) {
         final p1 = particles[i];
         final p2 = particles[j];
 
@@ -796,8 +826,9 @@ class ParticlesPainter extends CustomPainter {
           math.pow(dx2 - dx1, 2) + math.pow(dy2 - dy1, 2),
         );
 
-        if (distance < 100) {
+        if (distance < 80) { // Reduzido de 100 para 80
           canvas.drawLine(Offset(dx1, dy1), Offset(dx2, dy2), paint);
+          connections++;
         }
       }
     }
