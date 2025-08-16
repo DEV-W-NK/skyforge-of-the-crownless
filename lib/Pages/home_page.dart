@@ -12,6 +12,7 @@ import 'package:portifolio/Widgets/timeline.dart';
 import 'package:portifolio/Widgets/education_section.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:just_audio/just_audio.dart';
+import 'package:visibility_detector/visibility_detector.dart';
 
 /// Página principal do portfólio/currículo.
 /// Exibe header animado, partículas, experiências, projetos, escolaridade, skills e contato.
@@ -41,6 +42,9 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
 
   // Player de música de fundo
   late final AudioPlayer _audioPlayer;
+
+  // Lista de seções para lazy loading
+  final List<_SectionBuilder> _sections = [];
 
   @override
   void initState() {
@@ -95,6 +99,75 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     // Inicializa o player de áudio e tenta tocar ao abrir
     _audioPlayer = AudioPlayer();
     _playBackgroundMusic();
+
+    // Inicializa a lista de seções para lazy loading
+    _sections.addAll([
+      _SectionBuilder(
+        key: const ValueKey('about'),
+        builder:
+            (context) =>
+                _buildAnimatedSection('Sobre mim', _buildAboutSection(), 0),
+      ),
+      _SectionBuilder(
+        key: const ValueKey('exp'),
+        builder:
+            (context) => _buildAnimatedSection(
+              'Experiência',
+              ExperienceTimeline(experiences: experiences),
+              200,
+            ),
+      ),
+      _SectionBuilder(
+        key: const ValueKey('projects'),
+        builder:
+            (context) => _buildAnimatedSection(
+              'Projetos',
+              _buildProjectsSection(MediaQuery.of(context).size.width > 900),
+              400,
+            ),
+      ),
+      _SectionBuilder(
+        key: const ValueKey('education'),
+        builder:
+            (context) => _buildAnimatedSection(
+              'Escolaridade',
+              EducationSection(
+                educationList: [
+                  Education(
+                    degree: 'Bacharelado em Engenharia da Computação',
+                    institution:
+                        'Universidade Virtual do Estado de São Paulo (UNIVESP)',
+                    period: '2025 – 2030',
+                  ),
+                  Education(
+                    degree: 'Técnico em Desenvolvimento de Sistemas',
+                    institution: 'Etec Professor Basilides de Godoy',
+                    period: '2023 – 2024',
+                  ),
+                  Education(
+                    degree: 'Curso de Mecatrônica',
+                    institution: 'Alura',
+                    period: '2023 – 2024',
+                  ),
+                ],
+              ),
+              500,
+            ),
+      ),
+      _SectionBuilder(
+        key: const ValueKey('skills'),
+        builder: (context) => _buildAnimatedSection('Skills', SkillsRow(), 600),
+      ),
+      _SectionBuilder(
+        key: const ValueKey('contact'),
+        builder:
+            (context) => _buildAnimatedSection(
+              'Contato',
+              ContactSection(profile: profile),
+              800,
+            ),
+      ),
+    ]);
   }
 
   /// Inicializa a lista de partículas para o fundo animado.
@@ -147,27 +220,45 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
           // Conteúdo principal com rolagem
           SingleChildScrollView(
             controller: _scrollController,
-            physics: BouncingScrollPhysics(),
-            child: AnimatedBuilder(
-              animation: _fadeAnimation,
-              builder: (context, child) {
-                return FadeTransition(
-                  opacity: _fadeAnimation,
-                  child: Column(
-                    children: [
-                      _buildParallaxHeader(isWide),
-                      SizedBox(height: 48),
-                      _buildMainContent(isWide),
-                    ],
-                  ),
-                );
-              },
+            physics: const BouncingScrollPhysics(),
+            child: Column(
+              children: [
+                _buildParallaxHeader(isWide),
+                const SizedBox(height: 32), // Espaço entre header e conteúdo
+                _buildLazySections(isWide),
+                const SizedBox(height: 60), // Espaço no final
+              ],
             ),
           ),
 
           // Overlay de névoa para efeito visual
           _buildMistOverlay(),
         ],
+      ),
+    );
+  }
+
+  // Lazy loading das seções principais com espaçamento otimizado
+  Widget _buildLazySections(bool isWide) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isMobile = screenWidth < 600;
+    
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: isWide ? 72 : 16),
+      child: ListView.separated(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        itemCount: _sections.length,
+        separatorBuilder: (context, index) {
+          // Espaçamento diferenciado entre seções
+          return SizedBox(height: isMobile ? 56 : 72);
+        },
+        itemBuilder: (context, index) {
+          return _LazySection(
+            key: _sections[index].key,
+            builder: _sections[index].builder,
+          );
+        },
       ),
     );
   }
@@ -233,9 +324,9 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 _buildAnimatedTitle(),
-                SizedBox(height: 32),
+                const SizedBox(height: 32),
                 _buildAnimatedSubtitle(),
-                SizedBox(height: 48),
+                const SizedBox(height: 48),
                 _buildGlowingButtons(),
               ],
             ),
@@ -365,10 +456,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
         }
 
         return Transform.translate(
-          offset: Offset(
-            0,
-            (isMobile ? 30 : 50) * (1 - value),
-          ),
+          offset: Offset(0, (isMobile ? 30 : 50) * (1 - value)),
           child: Opacity(
             opacity: value,
             child: Center(
@@ -379,9 +467,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                     horizontal: horizontalPadding,
                     vertical: verticalPadding,
                   ),
-                  margin: EdgeInsets.symmetric(
-                    horizontal: isMobile ? 16 : 0,
-                  ),
+                  margin: EdgeInsets.symmetric(horizontal: isMobile ? 16 : 0),
                   decoration: BoxDecoration(
                     border: Border.all(
                       color: CyberpunkColors.primaryOrange.withOpacity(0.5),
@@ -427,7 +513,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
           Icons.code,
           () => _openLink(profile.github),
         ),
-        SizedBox(width: 24),
+        const SizedBox(width: 24),
         _buildGlowingButton(
           'LinkedIn',
           Icons.link,
@@ -475,7 +561,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: CyberpunkColors.charcoalGray,
                       foregroundColor: CyberpunkColors.primaryOrange,
-                      padding: EdgeInsets.symmetric(
+                      padding: const EdgeInsets.symmetric(
                         horizontal: 32,
                         vertical: 16,
                       ),
@@ -497,63 +583,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     );
   }
 
-  /// Conteúdo principal da página: sobre, experiência, projetos, escolaridade, skills, contato.
-  Widget _buildMainContent(bool isWide) {
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: isWide ? 72 : 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildAnimatedSection('Sobre mim', _buildAboutSection(), 0),
-          SizedBox(height: 64),
-          _buildAnimatedSection(
-            'Experiência',
-            ExperienceTimeline(experiences: experiences),
-            200,
-          ),
-          SizedBox(height: 64),
-          _buildAnimatedSection('Projetos', _buildProjectsSection(isWide), 400),
-          SizedBox(height: 64),
-          // Seção de escolaridade
-          _buildAnimatedSection(
-            'Escolaridade',
-            EducationSection(
-              educationList: [
-                Education(
-                  degree: 'Bacharelado em Engenharia da Computação',
-                  institution:
-                      'Universidade Virtual do Estado de São Paulo (UNIVESP)',
-                  period: '2025 – 2030',
-                ),
-                Education(
-                  degree: 'Técnico em Desenvolvimento de Sistemas',
-                  institution: 'Etec Professor Basilides de Godoy',
-                  period: '2023 – 2024',
-                ),
-                Education(
-                  degree: 'Curso de Mecatrônica',
-                  institution: 'Alura',
-                  period: '2023 – 2024',
-                ),
-              ],
-            ),
-            500,
-          ),
-          SizedBox(height: 64),
-          _buildAnimatedSection('Skills', SkillsRow(), 600),
-          SizedBox(height: 64),
-          _buildAnimatedSection(
-            'Contato',
-            ContactSection(profile: profile),
-            800,
-          ),
-          SizedBox(height: 100),
-        ],
-      ),
-    );
-  }
-
-  /// Seção animada com título e conteúdo.
+  /// Seção animada com título e conteúdo - espaçamento otimizado.
   Widget _buildAnimatedSection(String title, Widget content, double delay) {
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.0, end: 1.0),
@@ -568,7 +598,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _buildSectionTitle(title),
-                SizedBox(height: 24),
+                const SizedBox(height: 20), // Espaço entre título e conteúdo
                 content,
               ],
             ),
@@ -608,9 +638,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
               );
             },
           ),
-          SizedBox(
-            width: MediaQuery.of(context).size.width < 600 ? 12 : 16,
-          ),
+          SizedBox(width: MediaQuery.of(context).size.width < 600 ? 12 : 16),
           Expanded(
             child: FittedBox(
               fit: BoxFit.scaleDown,
@@ -632,24 +660,22 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
 
                     double fontSize;
                     if (isMobile) {
-                      fontSize = 20; // Bem menor para mobile
+                      fontSize = 20;
                     } else if (isTablet) {
-                      fontSize = 24; // Médio para tablet
+                      fontSize = 24;
                     } else {
-                      fontSize = 28; // Original para desktop
+                      fontSize = 28;
                     }
 
                     return Text(
                       title,
-                      maxLines: 1, // Força uma linha só
-                      overflow:
-                          TextOverflow.ellipsis, // Adiciona ... se necessário
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         fontSize: fontSize,
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
-                        letterSpacing:
-                            isMobile ? 0.8 : 1.2, // Menos espaçamento no mobile
+                        letterSpacing: isMobile ? 0.8 : 1.2,
                       ),
                     );
                   },
@@ -664,8 +690,11 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
 
   /// Seção "Sobre mim" com descrição.
   Widget _buildAboutSection() {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isMobile = screenWidth < 600;
+    
     return Container(
-      padding: EdgeInsets.all(24),
+      padding: EdgeInsets.all(isMobile ? 20 : 24),
       decoration: BoxDecoration(
         color: CyberpunkColors.charcoalGray.withOpacity(0.8),
         borderRadius: BorderRadius.circular(16),
@@ -686,7 +715,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
         'Atuo no desenvolvimento de soluções mobile, integrações IoT e backends serverless, unindo desempenho e inovação. '
         'Busco criar projetos que aliem design refinado, eficiência e experiências marcantes para o usuário.',
         style: TextStyle(
-          fontSize: 18,
+          fontSize: isMobile ? 16 : 18,
           color: CyberpunkColors.terminalGreen,
           height: 1.6,
           letterSpacing: 0.5,
@@ -706,62 +735,62 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
         padding: const EdgeInsets.symmetric(horizontal: 8.0),
         child: Wrap(
           spacing: 16,
-          runSpacing: 16,
-          children:
-              projects.asMap().entries.map((entry) {
-                final index = entry.key;
-                final project = entry.value;
-                return Padding(
-                  padding: const EdgeInsets.all(4.0),
-                  child: TweenAnimationBuilder<double>(
-                    tween: Tween(begin: 0.0, end: 1.0),
-                    duration: Duration(milliseconds: 800 + (index * 200)),
-                    curve: Curves.elasticOut,
-                    builder: (context, value, child) {
-                      return Transform.scale(
-                        scale: value,
-                        child: SizedBox(
-                          width: cardWidth,
-                          height: cardHeight,
-                          child: ProjectCard(project: project, width: cardWidth),
-                        ),
-                      );
-                    },
-                  ),
-                );
-              }).toList(),
-        ),
-      );
-    } else {
-      // Mobile: lista centralizada, renderização eficiente
-      return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8.0),
-        child: ListView.builder(
-          shrinkWrap: true,
-          physics: NeverScrollableScrollPhysics(),
-          itemCount: projects.length,
-          itemBuilder: (context, index) {
-            final project = projects[index];
+          runSpacing: 20, // Espaço vertical entre cards no wrap
+          children: projects.asMap().entries.map((entry) {
+            final index = entry.key;
+            final project = entry.value;
             return Padding(
-              padding: const EdgeInsets.only(bottom: 20.0, top: 4.0),
+              padding: const EdgeInsets.all(4.0),
               child: TweenAnimationBuilder<double>(
                 tween: Tween(begin: 0.0, end: 1.0),
                 duration: Duration(milliseconds: 800 + (index * 200)),
                 curve: Curves.elasticOut,
                 builder: (context, value, child) {
-                  return Align(
-                    alignment: Alignment.center,
-                    child: Transform.scale(
-                      scale: value,
-                      child: SizedBox(
+                  return Transform.scale(
+                    scale: value,
+                    child: SizedBox(
+                      width: cardWidth,
+                      height: cardHeight,
+                      child: ProjectCard(
+                        project: project,
                         width: cardWidth,
-                        height: cardHeight,
-                        child: ProjectCard(project: project, width: cardWidth),
                       ),
                     ),
                   );
                 },
               ),
+            );
+          }).toList(),
+        ),
+      );
+    } else {
+      // Mobile: lista centralizada com separadores
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8.0),
+        child: ListView.separated(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: projects.length,
+          separatorBuilder: (context, index) => const SizedBox(height: 20), // Espaço entre cards
+          itemBuilder: (context, index) {
+            final project = projects[index];
+            return TweenAnimationBuilder<double>(
+              tween: Tween(begin: 0.0, end: 1.0),
+              duration: Duration(milliseconds: 800 + (index * 200)),
+              curve: Curves.elasticOut,
+              builder: (context, value, child) {
+                return Align(
+                  alignment: Alignment.center,
+                  child: Transform.scale(
+                    scale: value,
+                    child: SizedBox(
+                      width: cardWidth,
+                      height: cardHeight,
+                      child: ProjectCard(project: project, width: cardWidth),
+                    ),
+                  ),
+                );
+              },
             );
           },
         ),
@@ -890,4 +919,111 @@ class ParticlesPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
+}
+
+class AnimatedOnVisible extends StatefulWidget {
+  final Widget child;
+  final Duration duration;
+  final double offsetY;
+  final Curve curve;
+
+  const AnimatedOnVisible({
+    required this.child,
+    this.duration = const Duration(milliseconds: 700),
+    this.offsetY = 60,
+    this.curve = Curves.easeOutCubic,
+    Key? key,
+  }) : super(key: key);
+
+  @override
+  State<AnimatedOnVisible> createState() => _AnimatedOnVisibleState();
+}
+
+class _AnimatedOnVisibleState extends State<AnimatedOnVisible>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _fade;
+  late Animation<Offset> _slide;
+  bool _visible = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(vsync: this, duration: widget.duration);
+    _fade = CurvedAnimation(parent: _controller, curve: widget.curve);
+    _slide = Tween<Offset>(
+      begin: Offset(0, widget.offsetY / 100),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: _controller, curve: widget.curve));
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _onVisibilityChanged(VisibilityInfo info) {
+    if (!_visible && info.visibleFraction > 0.1) {
+      _visible = true;
+      _controller.forward();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return VisibilityDetector(
+      key: widget.key ?? UniqueKey(),
+      onVisibilityChanged: _onVisibilityChanged,
+      child: AnimatedBuilder(
+        animation: _controller,
+        builder:
+            (context, child) => Opacity(
+              opacity: _fade.value,
+              child: Transform.translate(
+                offset: Offset(0, _slide.value.dy * 100),
+                child: child,
+              ),
+            ),
+        child: widget.child,
+      ),
+    );
+  }
+}
+
+// Widget para lazy loading e descarregamento de cada seção
+class _LazySection extends StatefulWidget {
+  final WidgetBuilder builder;
+  const _LazySection({Key? key, required this.builder}) : super(key: key);
+
+  @override
+  State<_LazySection> createState() => _LazySectionState();
+}
+
+class _LazySectionState extends State<_LazySection> {
+  bool _visible = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return VisibilityDetector(
+      key: widget.key ?? UniqueKey(),
+      onVisibilityChanged: (info) {
+        // Carrega quando entra, descarrega quando sai do viewport
+        final isNowVisible = info.visibleFraction > 0.01;
+        if (_visible != isNowVisible) {
+          setState(() => _visible = isNowVisible);
+        }
+      },
+      child: _visible
+          ? widget.builder(context)
+          : const SizedBox(height: 180), // Placeholder com altura menor
+    );
+  }
+}
+
+// Helper para construir seções
+class _SectionBuilder {
+  final Key key;
+  final WidgetBuilder builder;
+  _SectionBuilder({required this.key, required this.builder});
 }

@@ -12,7 +12,7 @@ void main() {
 class SkyforgeApp extends StatelessWidget {
   const SkyforgeApp({super.key});
 
-  @override
+  @override   
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Skyforge of the Crownless',
