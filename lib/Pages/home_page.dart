@@ -11,6 +11,7 @@ import 'package:portifolio/Widgets/skills_row.dart';
 import 'package:portifolio/Widgets/timeline.dart';
 import 'package:portifolio/Widgets/education_section.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:just_audio/just_audio.dart';
 
 /// Página principal do portfólio/currículo.
 /// Exibe header animado, partículas, experiências, projetos, escolaridade, skills e contato.
@@ -37,6 +38,9 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
 
   // Lista de partículas para o fundo animado
   List<Particle> _particles = [];
+
+  // Player de música de fundo
+  late final AudioPlayer _audioPlayer;
 
   @override
   void initState() {
@@ -87,6 +91,10 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
 
     // Vibração sutil ao abrir a página
     HapticFeedback.lightImpact();
+
+    // Inicializa o player de áudio e tenta tocar ao abrir
+    _audioPlayer = AudioPlayer();
+    _playBackgroundMusic();
   }
 
   /// Inicializa a lista de partículas para o fundo animado.
@@ -104,12 +112,24 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     });
   }
 
+  Future<void> _playBackgroundMusic() async {
+    try {
+      await _audioPlayer.setAsset('Assets/TheCrownlessKing.mp3');
+      await _audioPlayer.setLoopMode(LoopMode.one);
+      await _audioPlayer.setVolume(0.15); // Volume suave (0.0 a 1.0)
+      await _audioPlayer.play();
+    } catch (e) {
+      // Pode falhar no web por autoplay policy, ignore erro silenciosamente
+    }
+  }
+
   @override
   void dispose() {
     _fadeController.dispose();
     _particleController.dispose();
     _glowController.dispose();
     _scrollController.dispose();
+    _audioPlayer.dispose();
     super.dispose();
   }
 
