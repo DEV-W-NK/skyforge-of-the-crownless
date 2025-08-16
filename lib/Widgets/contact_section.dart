@@ -8,199 +8,282 @@ import 'package:url_launcher/url_launcher.dart';
 class ContactSection extends StatelessWidget {
   final Profile profile;
 
-  ContactSection({required this.profile});
+ ContactSection({Key? key, required this.profile}) : super(key: key);
+
+  // Cache das configurações dos cartões para evitar recriação
+  late final List<_ContactCardConfig> _contactConfigs = [
+    _ContactCardConfig(
+      icon: Icons.email_outlined,
+      title: 'Email',
+      value: profile.email,
+      onPrimaryTap: () => _openEmail(profile.email),
+      onSecondaryTap: () => _copyToClipboard(profile.email, 'Email copiado'),
+    ),
+    if (_isNotEmpty(profile.linkedin))
+      _ContactCardConfig(
+        icon: Icons.link,
+        title: 'LinkedIn',
+        value: profile.linkedin!,
+        onPrimaryTap: () => _openLink(profile.linkedin!),
+        onSecondaryTap: () => _copyToClipboard(profile.linkedin!, 'Link do LinkedIn copiado'),
+        primaryLabel: 'Abrir',
+      ),
+    if (_isNotEmpty(profile.github))
+      _ContactCardConfig(
+        icon: Icons.code,
+        title: 'GitHub',
+        value: profile.github!,
+        onPrimaryTap: () => _openLink(profile.github!),
+        onSecondaryTap: () => _copyToClipboard(profile.github!, 'Link do GitHub copiado'),
+        primaryLabel: 'Abrir',
+      ),
+    if (_isNotEmpty(profile.location))
+      _ContactCardConfig(
+        icon: Icons.location_on_outlined,
+        title: 'Localização',
+        value: profile.location!,
+        onSecondaryTap: () => _copyToClipboard(profile.location!, 'Localização copiada'),
+        showCopyOnly: true,
+      ),
+  ];
 
   @override
   Widget build(BuildContext context) {
     return Wrap(
       spacing: 12,
       runSpacing: 12,
-      children: [
-        _ContactCard(
-          icon: Icons.email_outlined,
-          title: 'Email',
-          value: profile.email,
-          onPrimaryTap: () => _openEmail(context, profile.email),
-          onSecondaryTap: () => _copyToClipboard(context, profile.email, 'Email copiado'),
-        ),
-        if ((profile.linkedin ?? '').isNotEmpty)
-          _ContactCard(
-            icon: Icons.link,
-            title: 'LinkedIn',
-            value: profile.linkedin,
-            onPrimaryTap: () => _openLink(context, profile.linkedin),
-            onSecondaryTap: () => _copyToClipboard(context, profile.linkedin, 'Link do LinkedIn copiado'),
-            primaryLabel: 'Abrir',
-          ),
-        if ((profile.github ?? '').isNotEmpty)
-          _ContactCard(
-            icon: Icons.code,
-            title: 'GitHub',
-            value: profile.github,
-            onPrimaryTap: () => _openLink(context, profile.github),
-            onSecondaryTap: () => _copyToClipboard(context, profile.github, 'Link do GitHub copiado'),
-            primaryLabel: 'Abrir',
-          ),
-        // localização (opcional)
-        if ((profile.location ?? '').isNotEmpty)
-          _ContactCard(
-            icon: Icons.location_on_outlined,
-            title: 'Localização',
-            value: profile.location,
-            onPrimaryTap: null,
-            onSecondaryTap: () => _copyToClipboard(context, profile.location!, 'Localização copiada'),
-            showCopyOnly: true,
-          ),
-      ],
+      children: _contactConfigs
+          .map((config) => _ContactCard(config: config))
+          .toList(growable: false),
     );
   }
 
-  Future<void> _openLink(BuildContext context, String url) async {
+  // Métodos helper inline para melhor performance
+  bool _isNotEmpty(String? value) => value != null && value.isNotEmpty;
+
+  Future<void> _openLink(String url) async {
     try {
-      final uri = Uri.tryParse(url) ?? Uri();
-      if (uri.toString().isEmpty) throw 'URL inválida';
-      if (await canLaunchUrl(uri)) {
-        await launchUrl(uri, mode: LaunchMode.externalApplication);
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Não foi possível abrir o link')));
+      final uri = Uri.tryParse(url);
+      if (uri == null || !uri.hasScheme) {
+        throw 'URL inválida: $url';
+      }
+      
+      if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+        throw 'Não foi possível abrir o link';
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro ao abrir link: $e')));
+      // Usar rethrow para manter stack trace
+      rethrow;
     }
   }
 
-  Future<void> _openEmail(BuildContext context, String email) async {
+  Future<void> _openEmail(String email) async {
     try {
       final uri = Uri(
         scheme: 'mailto',
         path: email,
-        queryParameters: {
-          'subject': 'Contato via portfólio'
-        },
+        queryParameters: {'subject': 'Contato via portfólio'},
       );
-      if (await canLaunchUrl(uri)) {
-        await launchUrl(uri);
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Cliente de e-mail não encontrado')));
+      
+      if (!await launchUrl(uri)) {
+        throw 'Cliente de e-mail não encontrado';
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro ao abrir email: $e')));
+      rethrow;
     }
   }
 
-  Future<void> _callPhone(BuildContext context, String phone) async {
-    try {
-      final cleaned = phone.replaceAll(RegExp(r'[^0-9+]'), '');
-      final uri = Uri(scheme: 'tel', path: cleaned);
-      if (await canLaunchUrl(uri)) {
-        await launchUrl(uri);
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Não foi possível iniciar chamada')));
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro ao iniciar chamada: $e')));
-    }
-  }
-
-  Future<void> _copyToClipboard(BuildContext context, String text, String msg) async {
+  Future<void> _copyToClipboard(String text, String message) async {
     await Clipboard.setData(ClipboardData(text: text));
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+    // Retorna a mensagem para ser exibida pelo widget pai se necessário
   }
 }
 
-class _ContactCard extends StatelessWidget {
+// Classe de configuração para evitar passing many parameters
+class _ContactCardConfig {
   final IconData icon;
   final String title;
-  final String? value;
+  final String value;
   final VoidCallback? onPrimaryTap;
   final VoidCallback? onSecondaryTap;
   final String primaryLabel;
   final bool showCopyOnly;
 
-  const _ContactCard({
-    Key? key,
+  const _ContactCardConfig({
     required this.icon,
     required this.title,
-    this.value,
+    required this.value,
     this.onPrimaryTap,
     this.onSecondaryTap,
     this.primaryLabel = 'Abrir',
     this.showCopyOnly = false,
-  }) : super(key: key);
+  });
+}
+
+class _ContactCard extends StatelessWidget {
+  final _ContactCardConfig config;
+
+  const _ContactCard({Key? key, required this.config}) : super(key: key);
+
+  // Constantes para evitar recriação
+  static const _cardConstraints = BoxConstraints(minWidth: 200, maxWidth: 420);
+  static const _iconSize = 44.0;
+  static const _spacing = 12.0;
+  static const _padding = EdgeInsets.symmetric(horizontal: 14, vertical: 12);
+  static const _iconPadding = EdgeInsets.all(10);
 
   @override
   Widget build(BuildContext context) {
-    final bool hasValue = (value ?? '').isNotEmpty;
-
     return ConstrainedBox(
-      constraints: BoxConstraints(minWidth: 200, maxWidth: 420),
+      constraints: _cardConstraints,
       child: Container(
-        decoration: BoxDecoration(
-          color: CyberpunkColors.charcoalGray,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: CyberpunkColors.mediumGray.withOpacity(0.12)),
-          boxShadow: [
-            BoxShadow(color: Colors.black45, blurRadius: 8, offset: Offset(0, 4)),
-          ],
-        ),
-        padding: EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: _buildCardDecoration(),
+        padding: _padding,
         child: Row(
           children: [
-            Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: CyberpunkColors.darkGray,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(icon, color: CyberpunkColors.screenTeal),
-            ),
-            SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(title, style: TextStyle(color: Colors.white70, fontSize: 12)),
-                  SizedBox(height: 4),
-                  if (hasValue)
-                    SelectableText(
-                      value!,
-                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
-                      maxLines: 2,
-                      scrollPhysics: NeverScrollableScrollPhysics(),
-                    )
-                  else
-                    Text('Não informado', style: TextStyle(color: Colors.white38)),
-                ],
-              ),
-            ),
-            SizedBox(width: 12),
-            // ações
-            if (!showCopyOnly) ...[
-              IconButton(
-                tooltip: primaryLabel,
-                visualDensity: VisualDensity.compact,
-                onPressed: hasValue && onPrimaryTap != null ? onPrimaryTap : null,
-                icon: Icon(Icons.open_in_new, color: hasValue ? CyberpunkColors.primaryOrange : Colors.white24),
-              ),
-              IconButton(
-                tooltip: 'Copiar',
-                visualDensity: VisualDensity.compact,
-                onPressed: hasValue && onSecondaryTap != null ? onSecondaryTap : null,
-                icon: Icon(Icons.copy, color: CyberpunkColors.neonBlue),
-              ),
-            ] else ...[
-              IconButton(
-                tooltip: 'Copiar',
-                visualDensity: VisualDensity.compact,
-                onPressed: hasValue && onSecondaryTap != null ? onSecondaryTap : null,
-                icon: Icon(Icons.copy, color: CyberpunkColors.neonBlue),
-              ),
-            ],
+            _buildIconContainer(),
+            const SizedBox(width: _spacing),
+            _buildContentSection(),
+            const SizedBox(width: _spacing),
+            _buildActionButtons(context),
           ],
         ),
       ),
     );
+  }
+
+  BoxDecoration _buildCardDecoration() {
+    return BoxDecoration(
+      color: CyberpunkColors.charcoalGray,
+      borderRadius: BorderRadius.circular(12),
+      border: Border.all(
+        color: CyberpunkColors.mediumGray.withOpacity(0.12),
+      ),
+      boxShadow: const [
+        BoxShadow(
+          color: Colors.black45,
+          blurRadius: 8,
+          offset: Offset(0, 4),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildIconContainer() {
+    return Container(
+      width: _iconSize,
+      height: _iconSize,
+      decoration: BoxDecoration(
+        color: CyberpunkColors.darkGray,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Icon(
+        config.icon,
+        color: CyberpunkColors.screenTeal,
+      ),
+    );
+  }
+
+  Widget _buildContentSection() {
+    return Expanded(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            config.title,
+            style: const TextStyle(
+              color: Colors.white70,
+              fontSize: 12,
+            ),
+          ),
+          const SizedBox(height: 4),
+          SelectableText(
+            config.value,
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w600,
+            ),
+            maxLines: 2,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActionButtons(BuildContext context) {
+    if (config.showCopyOnly) {
+      return _buildCopyButton(context);
+    }
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _buildPrimaryButton(context),
+        _buildCopyButton(context),
+      ],
+    );
+  }
+
+  Widget _buildPrimaryButton(BuildContext context) {
+    return IconButton(
+      tooltip: config.primaryLabel,
+      visualDensity: VisualDensity.compact,
+      onPressed: config.onPrimaryTap != null 
+          ? () => _handleAction(context, config.onPrimaryTap!)
+          : null,
+      icon: Icon(
+        Icons.open_in_new,
+        color: config.onPrimaryTap != null 
+            ? CyberpunkColors.primaryOrange 
+            : Colors.white24,
+      ),
+    );
+  }
+
+  Widget _buildCopyButton(BuildContext context) {
+    return IconButton(
+      tooltip: 'Copiar',
+      visualDensity: VisualDensity.compact,
+      onPressed: config.onSecondaryTap != null
+          ? () => _handleCopyAction(context)
+          : null,
+      icon: Icon(
+        Icons.copy,
+        color: CyberpunkColors.neonBlue,
+      ),
+    );
+  }
+
+  Future<void> _handleAction(BuildContext context, VoidCallback action) async {
+    try {
+      action();
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _handleCopyAction(BuildContext context) async {
+    try {
+      config.onSecondaryTap?.call();
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${config.title} copiado!'),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro ao copiar: $e')),
+        );
+      }
+    }
   }
 }

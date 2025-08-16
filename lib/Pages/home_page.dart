@@ -156,7 +156,33 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       ),
       _SectionBuilder(
         key: const ValueKey('skills'),
-        builder: (context) => _buildAnimatedSection('Skills', SkillsRow(), 600),
+        builder:
+            (context) => FutureBuilder<Widget>(
+              // Delay micro para não bloquear a UI thread
+              future: Future.microtask(
+                () => _buildAnimatedSection(
+                  'Skills',
+                  const SkillsRow(lazy: true),
+                  600,
+                ),
+              ),
+              builder: (context, snapshot) {
+                if (snapshot.hasData) {
+                  return snapshot.data!;
+                }
+                // Placeholder durante carregamento
+                return Container(
+                  height: 100,
+                  child: Center(
+                    child: CircularProgressIndicator(
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        CyberpunkColors.primaryOrange.withOpacity(0.5),
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
       ),
       _SectionBuilder(
         key: const ValueKey('contact'),
@@ -242,7 +268,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   Widget _buildLazySections(bool isWide) {
     final screenWidth = MediaQuery.of(context).size.width;
     final isMobile = screenWidth < 600;
-    
+
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: isWide ? 72 : 16),
       child: ListView.separated(
@@ -692,7 +718,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   Widget _buildAboutSection() {
     final screenWidth = MediaQuery.of(context).size.width;
     final isMobile = screenWidth < 600;
-    
+
     return Container(
       padding: EdgeInsets.all(isMobile ? 20 : 24),
       decoration: BoxDecoration(
@@ -727,70 +753,50 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   /// Seção de projetos: grid no desktop/tablet, lista centralizada no mobile.
   Widget _buildProjectsSection(bool isWide) {
     final double cardWidth = isWide ? 320 : 340;
-    final double cardHeight = isWide ? 370 : 400;
 
     if (isWide) {
-      // Desktop/tablet: grid responsivo
+      // Desktop/tablet: grid responsivo com animação individual
       return Padding(
         padding: const EdgeInsets.symmetric(horizontal: 8.0),
         child: Wrap(
           spacing: 16,
-          runSpacing: 20, // Espaço vertical entre cards no wrap
-          children: projects.asMap().entries.map((entry) {
-            final index = entry.key;
-            final project = entry.value;
-            return Padding(
-              padding: const EdgeInsets.all(4.0),
-              child: TweenAnimationBuilder<double>(
-                tween: Tween(begin: 0.0, end: 1.0),
-                duration: Duration(milliseconds: 800 + (index * 200)),
-                curve: Curves.elasticOut,
-                builder: (context, value, child) {
-                  return Transform.scale(
-                    scale: value,
-                    child: SizedBox(
-                      width: cardWidth,
-                      height: cardHeight,
-                      child: ProjectCard(
-                        project: project,
-                        width: cardWidth,
-                      ),
-                    ),
-                  );
-                },
-              ),
-            );
-          }).toList(),
+          runSpacing: 20,
+          alignment: WrapAlignment.center, // Centraliza os cards
+          children:
+              projects.asMap().entries.map((entry) {
+                final index = entry.key;
+                final project = entry.value;
+
+                return SizedBox(
+                  width: cardWidth,
+                  child: ProjectCard(
+                    project: project,
+                    width: cardWidth,
+                    index: index, // Passa o índice para delay escalonado
+                  ),
+                );
+              }).toList(),
         ),
       );
     } else {
-      // Mobile: lista centralizada com separadores
+      // Mobile: lista centralizada com animação individual
       return Padding(
         padding: const EdgeInsets.symmetric(horizontal: 8.0),
         child: ListView.separated(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           itemCount: projects.length,
-          separatorBuilder: (context, index) => const SizedBox(height: 20), // Espaço entre cards
+          separatorBuilder: (context, index) => const SizedBox(height: 20),
           itemBuilder: (context, index) {
             final project = projects[index];
-            return TweenAnimationBuilder<double>(
-              tween: Tween(begin: 0.0, end: 1.0),
-              duration: Duration(milliseconds: 800 + (index * 200)),
-              curve: Curves.elasticOut,
-              builder: (context, value, child) {
-                return Align(
-                  alignment: Alignment.center,
-                  child: Transform.scale(
-                    scale: value,
-                    child: SizedBox(
-                      width: cardWidth,
-                      height: cardHeight,
-                      child: ProjectCard(project: project, width: cardWidth),
-                    ),
-                  ),
-                );
-              },
+
+            return Align(
+              alignment: Alignment.center,
+              child: ProjectCard(
+                project: project,
+                width: cardWidth,
+                index: index, // Passa o índice para delay escalonado
+              ),
             );
           },
         ),
@@ -1014,9 +1020,10 @@ class _LazySectionState extends State<_LazySection> {
           setState(() => _visible = isNowVisible);
         }
       },
-      child: _visible
-          ? widget.builder(context)
-          : const SizedBox(height: 180), // Placeholder com altura menor
+      child:
+          _visible
+              ? widget.builder(context)
+              : const SizedBox(height: 180), // Placeholder com altura menor
     );
   }
 }
@@ -1026,4 +1033,103 @@ class _SectionBuilder {
   final Key key;
   final WidgetBuilder builder;
   _SectionBuilder({required this.key, required this.builder});
+}
+
+class OptimizedProjectCard extends StatefulWidget {
+  final Project project;
+  final double? width;
+  final int index;
+
+  const OptimizedProjectCard({
+    Key? key,
+    required this.project,
+    this.width,
+    this.index = 0,
+  }) : super(key: key);
+
+  @override
+  State<OptimizedProjectCard> createState() => _OptimizedProjectCardState();
+}
+
+class _OptimizedProjectCardState extends State<OptimizedProjectCard>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scaleAnimation;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
+
+  bool _hasAnimated = false;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 800),
+      vsync: this,
+    );
+
+    _scaleAnimation = Tween<double>(
+      begin: 0.85,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.elasticOut));
+
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: const Interval(0.0, 0.7, curve: Curves.easeOut),
+      ),
+    );
+
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.5),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutBack));
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _onVisibilityChanged(VisibilityInfo info) {
+    if (!_hasAnimated && info.visibleFraction > 0.2) {
+      _hasAnimated = true;
+
+      // Delay progressivo para cada card
+      Future.delayed(Duration(milliseconds: widget.index * 150), () {
+        if (mounted) {
+          _controller.forward();
+        }
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return VisibilityDetector(
+      key: Key('optimized_project_${widget.index}'),
+      onVisibilityChanged: _onVisibilityChanged,
+      child: AnimatedBuilder(
+        animation: _controller,
+        builder: (context, child) {
+          return Transform.scale(
+            scale: _scaleAnimation.value,
+            child: SlideTransition(
+              position: _slideAnimation,
+              child: FadeTransition(
+                opacity: _fadeAnimation,
+                child: ProjectCard(
+                  project: widget.project,
+                  width: widget.width,
+                  index: widget.index,
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
 }

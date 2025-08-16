@@ -4,204 +4,109 @@ import 'package:flutter/material.dart';
 import 'package:portifolio/Theme/ds3_pallet.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-/// Widget que exibe uma linha de skills (tecnologias) com animações otimizadas.
-class SkillsRow extends StatelessWidget {
+/// Widget que exibe uma linha de skills (tecnologias) com carregamento otimizado.
+class SkillsRow extends StatefulWidget {
   final List<String> skills;
+  final bool lazy; // Flag para carregamento lazy
 
   /// [skills] pode ser passado ou usa uma lista padrão.
-  SkillsRow({
+  /// [lazy] controla se deve usar carregamento preguiçoso (padrão: true)
+  const SkillsRow({
     Key? key,
     List<String>? skills,
+    this.lazy = true,
   })  : skills = skills ??
-            ['Flutter', 'Dart', 'Java','Mobile', 'C++', 'Firebase', 'Node.js', 'MQTT', 'ESP32'],
+            const ['Flutter', 'Dart', 'Java','Mobile', 'C++', 'Firebase', 'Node.js', 'MQTT', 'ESP32'],
         super(key: key);
 
   @override
-  Widget build(BuildContext context) {
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children: skills.map((s) => _SkillPill(skill: s)).toList(),
-    );
-  }
+  State<SkillsRow> createState() => _SkillsRowState();
 }
 
-/// Widget individual para cada skill, com animações otimizadas.
-class _SkillPill extends StatefulWidget {
-  final String skill;
-  const _SkillPill({Key? key, required this.skill}) : super(key: key);
-
-  @override
-  State<_SkillPill> createState() => _SkillPillState();
-}
-
-class _SkillPillState extends State<_SkillPill>
-    with SingleTickerProviderStateMixin {
+class _SkillsRowState extends State<SkillsRow> {
+  bool _isVisible = false;
+  bool _hasBeenBuilt = false;
   
-  // Controllers para animações otimizadas
-  late AnimationController _animationController;
-  late Animation<double> _scaleAnimation;
-  late Animation<double> _borderAnimation;
-  late Animation<double> _glowAnimation;
-  
-  bool _isHovered = false;
-  
-  // Cache dos valores calculados para evitar recálculos
-  late final IconData? _cachedIcon;
-  late final List<Color> _cachedGradient;
-  late final String? _cachedUrl;
+  // Cache estático para evitar recalcular a mesma skill múltiplas vezes
+  static final Map<String, _SkillData> _skillCache = {};
 
   @override
   void initState() {
     super.initState();
     
-    // Inicializar controller único para todas as animações
-    _animationController = AnimationController(
-      duration: const Duration(milliseconds: 200),
-      vsync: this,
-    );
-    
-    // Animações com curvas otimizadas
-    _scaleAnimation = Tween<double>(
-      begin: 1.0,
-      end: 1.02, // Reduzido para ser mais sutil
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeOutCubic, // Curva mais suave
-    ));
-    
-    _borderAnimation = Tween<double>(
-      begin: 1.0,
-      end: 1.4,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeOutCubic,
-    ));
-    
-    _glowAnimation = Tween<double>(
-      begin: 0.0,
-      end: 0.12,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeOutCubic,
-    ));
-    
-    // Cache dos valores para evitar recálculos durante animações
-    _cachedIcon = _iconFor(widget.skill);
-    _cachedGradient = _accentFor(widget.skill);
-    _cachedUrl = _skillUrl(widget.skill);
-  }
-
-  @override
-  void dispose() {
-    _animationController.dispose();
-    super.dispose();
-  }
-
-  void _onHoverChanged(bool isHovered) {
-    if (_isHovered != isHovered) {
-      setState(() {
-        _isHovered = isHovered;
+    // Se não for lazy, renderiza imediatamente
+    if (!widget.lazy) {
+      _isVisible = true;
+      _preloadSkillData();
+    } else {
+      // Lazy loading com delay micro para evitar janks
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          Future.microtask(() {
+            if (mounted) {
+              setState(() {
+                _isVisible = true;
+              });
+              _preloadSkillData();
+            }
+          });
+        }
       });
-      
-      if (isHovered) {
-        _animationController.forward();
-      } else {
-        _animationController.reverse();
+    }
+  }
+
+  /// Pre-carrega dados das skills em cache para evitar rebuild
+  void _preloadSkillData() {
+    if (_hasBeenBuilt) return;
+    
+    for (final skill in widget.skills) {
+      if (!_skillCache.containsKey(skill)) {
+        _skillCache[skill] = _SkillData(
+          skill: skill,
+          icon: _iconFor(skill),
+          gradient: _accentFor(skill),
+          url: _skillUrl(skill),
+        );
       }
     }
+    _hasBeenBuilt = true;
   }
 
   @override
   Widget build(BuildContext context) {
-    return MouseRegion(
-      onEnter: (_) => _onHoverChanged(true),
-      onExit: (_) => _onHoverChanged(false),
-      child: AnimatedBuilder(
-        animation: _animationController,
-        builder: (context, child) {
-          return Transform.scale(
-            scale: _scaleAnimation.value,
-            child: Container(
-              decoration: BoxDecoration(
-                color: CyberpunkColors.darkGray,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: Color.lerp(
-                    CyberpunkColors.mediumGray.withOpacity(0.18),
-                    CyberpunkColors.primaryOrange.withOpacity(0.9),
-                    _animationController.value,
-                  )!,
-                  width: _borderAnimation.value,
-                ),
-                boxShadow: [
-                  // Shadow base sempre presente (mais performático)
-                  const BoxShadow(
-                    color: Colors.black26,
-                    blurRadius: 6,
-                    offset: Offset(0, 4),
-                  ),
-                  // Glow shadow animado
-                  BoxShadow(
-                    color: CyberpunkColors.primaryOrange.withOpacity(_glowAnimation.value),
-                    blurRadius: 16 * _animationController.value,
-                    spreadRadius: 1 * _animationController.value,
-                    offset: Offset(0, 6 * _animationController.value),
-                  ),
-                ],
-              ),
-              child: Material(
-                color: Colors.transparent,
-                borderRadius: BorderRadius.circular(12),
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(12),
-                  onTap: () => _openSkillLink(),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        // Marcador vertical com gradiente cache
-                        Container(
-                          width: 6,
-                          height: 28,
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.topCenter,
-                              end: Alignment.bottomCenter,
-                              colors: _cachedGradient,
-                            ),
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        // Ícone (se houver) - cache
-                        if (_cachedIcon != null) ...[
-                          Icon(_cachedIcon, size: 16, color: CyberpunkColors.screenTeal),
-                          const SizedBox(width: 8),
-                        ],
-                        // Texto com tooltip
-                        Text(
-                          widget.skill,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w600,
-                            letterSpacing: 0.2,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
+    if (!_isVisible) {
+      // Placeholder com altura estimada para evitar layout shift
+      return SizedBox(
+        height: 44, // Altura aproximada de uma linha de skills
+        child: Center(
+          child: Container(
+            width: 20,
+            height: 20,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              valueColor: AlwaysStoppedAnimation<Color>(
+                CyberpunkColors.primaryOrange.withOpacity(0.5),
               ),
             ),
-          );
-        },
+          ),
+        ),
+      );
+    }
+
+    return RepaintBoundary(
+      child: Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        children: widget.skills.map((skill) {
+          // Usa dados do cache
+          final skillData = _skillCache[skill]!;
+          return _SkillPill(skillData: skillData);
+        }).toList(),
       ),
     );
   }
 
-  /// Retorna ícone nativo para a skill (cached).
+  /// Retorna ícone nativo para a skill.
   IconData? _iconFor(String s) {
     final n = s.toLowerCase();
     switch (true) {
@@ -217,7 +122,7 @@ class _SkillPillState extends State<_SkillPill>
     }
   }
 
-  /// Retorna gradiente de cores para a skill (cached).
+  /// Retorna gradiente de cores para a skill.
   List<Color> _accentFor(String s) {
     final n = s.toLowerCase();
     switch (true) {
@@ -234,17 +139,7 @@ class _SkillPillState extends State<_SkillPill>
     }
   }
 
-  /// Abre o link externo de referência da skill.
-  void _openSkillLink() async {
-    if (_cachedUrl != null) {
-      final uri = Uri.parse(_cachedUrl!);
-      if (await canLaunchUrl(uri)) {
-        await launchUrl(uri, mode: LaunchMode.externalApplication);
-      }
-    }
-  }
-
-  /// Mapeia skill para um link externo de referência (cached).
+  /// Mapeia skill para um link externo de referência.
   String? _skillUrl(String s) {
     final n = s.toLowerCase();
     switch (true) {
@@ -257,6 +152,206 @@ class _SkillPillState extends State<_SkillPill>
       case _ when n.contains('mqtt'): return 'https://mqtt.org/';
       case _ when n.contains('esp'): return 'https://www.espressif.com/en/products/socs/esp32';
       default: return null;
+    }
+  }
+}
+
+/// Classe para armazenar dados pré-calculados da skill
+class _SkillData {
+  final String skill;
+  final IconData? icon;
+  final List<Color> gradient;
+  final String? url;
+
+  const _SkillData({
+    required this.skill,
+    required this.icon,
+    required this.gradient,
+    required this.url,
+  });
+}
+
+/// Widget individual para cada skill, com animações otimizadas.
+class _SkillPill extends StatefulWidget {
+  final _SkillData skillData;
+  
+  const _SkillPill({Key? key, required this.skillData}) : super(key: key);
+
+  @override
+  State<_SkillPill> createState() => _SkillPillState();
+}
+
+class _SkillPillState extends State<_SkillPill>
+    with SingleTickerProviderStateMixin {
+  
+  // Controllers para animações otimizadas
+  late AnimationController _animationController;
+  late Animation<double> _scaleAnimation;
+  late Animation<Color?> _borderAnimation;
+  late Animation<double> _glowAnimation;
+  
+  bool _isHovered = false;
+  bool _isDisposed = false;
+
+  @override
+  void initState() {
+    super.initState();
+    
+    // Inicializar controller único para todas as animações
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 150), // Reduzido para mais responsivo
+      vsync: this,
+    );
+    
+    // Animações com curvas otimizadas
+    _scaleAnimation = Tween<double>(
+      begin: 1.0,
+      end: 1.02,
+    ).animate(CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.easeOutCubic,
+    ));
+    
+    _borderAnimation = ColorTween(
+      begin: CyberpunkColors.mediumGray.withOpacity(0.18),
+      end: CyberpunkColors.primaryOrange.withOpacity(0.9),
+    ).animate(CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.easeOutCubic,
+    ));
+    
+    _glowAnimation = Tween<double>(
+      begin: 0.0,
+      end: 0.12,
+    ).animate(CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.easeOutCubic,
+    ));
+  }
+
+  @override
+  void dispose() {
+    _isDisposed = true;
+    _animationController.dispose();
+    super.dispose();
+  }
+
+  void _onHoverChanged(bool isHovered) {
+    if (_isDisposed) return;
+    
+    if (_isHovered != isHovered) {
+      setState(() {
+        _isHovered = isHovered;
+      });
+      
+      if (isHovered) {
+        _animationController.forward();
+      } else {
+        _animationController.reverse();
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return RepaintBoundary(
+      child: MouseRegion(
+        onEnter: (_) => _onHoverChanged(true),
+        onExit: (_) => _onHoverChanged(false),
+        child: AnimatedBuilder(
+          animation: _animationController,
+          builder: (context, child) {
+            return Transform.scale(
+              scale: _scaleAnimation.value,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: CyberpunkColors.darkGray,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: _borderAnimation.value ?? Colors.transparent,
+                    width: 1.0 + (_animationController.value * 0.4),
+                  ),
+                  boxShadow: [
+                    // Shadow base sempre presente
+                    const BoxShadow(
+                      color: Colors.black26,
+                      blurRadius: 6,
+                      offset: Offset(0, 4),
+                    ),
+                    // Glow shadow animado - só renderiza se necessário
+                    if (_animationController.value > 0) ...[
+                      BoxShadow(
+                        color: CyberpunkColors.primaryOrange.withOpacity(_glowAnimation.value),
+                        blurRadius: 16 * _animationController.value,
+                        spreadRadius: 1 * _animationController.value,
+                        offset: Offset(0, 6 * _animationController.value),
+                      ),
+                    ],
+                  ],
+                ),
+                child: Material(
+                  color: Colors.transparent,
+                  borderRadius: BorderRadius.circular(12),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(12),
+                    onTap: () => _openSkillLink(),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // Marcador vertical com gradiente
+                          Container(
+                            width: 6,
+                            height: 28,
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.topCenter,
+                                end: Alignment.bottomCenter,
+                                colors: widget.skillData.gradient,
+                              ),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          // Ícone (se houver)
+                          if (widget.skillData.icon != null) ...[
+                            Icon(
+                              widget.skillData.icon, 
+                              size: 16, 
+                              color: CyberpunkColors.screenTeal,
+                            ),
+                            const SizedBox(width: 8),
+                          ],
+                          // Texto
+                          Text(
+                            widget.skillData.skill,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: 0.2,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  /// Abre o link externo de referência da skill.
+  void _openSkillLink() async {
+    if (widget.skillData.url != null) {
+      final uri = Uri.parse(widget.skillData.url!);
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      }
     }
   }
 }
