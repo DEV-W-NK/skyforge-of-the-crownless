@@ -12,12 +12,11 @@ class SkillsRow extends StatefulWidget {
   /// [skills] pode ser passado ou usa uma lista padrão.
   /// [lazy] controla se deve usar carregamento preguiçoso (padrão: true)
   const SkillsRow({
-    Key? key,
+    super.key,
     List<String>? skills,
     this.lazy = true,
   })  : skills = skills ??
-            const ['Flutter', 'Dart', 'Java','Mobile', 'C++', 'Firebase', 'Node.js', 'MQTT', 'ESP32'],
-        super(key: key);
+            const ['Flutter', 'Dart', 'Java','Mobile', 'C++', 'Firebase', 'Node.js', 'MQTT', 'ESP32'];
 
   @override
   State<SkillsRow> createState() => _SkillsRowState();
@@ -79,7 +78,7 @@ class _SkillsRowState extends State<SkillsRow> {
       return SizedBox(
         height: 44, // Altura aproximada de uma linha de skills
         child: Center(
-          child: Container(
+          child: SizedBox(
             width: 20,
             height: 20,
             child: CircularProgressIndicator(
@@ -175,7 +174,7 @@ class _SkillData {
 class _SkillPill extends StatefulWidget {
   final _SkillData skillData;
   
-  const _SkillPill({Key? key, required this.skillData}) : super(key: key);
+  const _SkillPill({super.key, required this.skillData});
 
   @override
   State<_SkillPill> createState() => _SkillPillState();

@@ -8,7 +8,7 @@ import 'package:url_launcher/url_launcher.dart';
 class ContactSection extends StatelessWidget {
   final Profile profile;
 
- ContactSection({Key? key, required this.profile}) : super(key: key);
+ ContactSection({super.key, required this.profile});
 
   // Cache das configurações dos cartões para evitar recriação
   late final List<_ContactCardConfig> _contactConfigs = [
@@ -23,26 +23,26 @@ class ContactSection extends StatelessWidget {
       _ContactCardConfig(
         icon: Icons.link,
         title: 'LinkedIn',
-        value: profile.linkedin!,
-        onPrimaryTap: () => _openLink(profile.linkedin!),
-        onSecondaryTap: () => _copyToClipboard(profile.linkedin!, 'Link do LinkedIn copiado'),
+        value: profile.linkedin,
+        onPrimaryTap: () => _openLink(profile.linkedin),
+        onSecondaryTap: () => _copyToClipboard(profile.linkedin, 'Link do LinkedIn copiado'),
         primaryLabel: 'Abrir',
       ),
     if (_isNotEmpty(profile.github))
       _ContactCardConfig(
         icon: Icons.code,
         title: 'GitHub',
-        value: profile.github!,
-        onPrimaryTap: () => _openLink(profile.github!),
-        onSecondaryTap: () => _copyToClipboard(profile.github!, 'Link do GitHub copiado'),
+        value: profile.github,
+        onPrimaryTap: () => _openLink(profile.github),
+        onSecondaryTap: () => _copyToClipboard(profile.github, 'Link do GitHub copiado'),
         primaryLabel: 'Abrir',
       ),
     if (_isNotEmpty(profile.location))
       _ContactCardConfig(
         icon: Icons.location_on_outlined,
         title: 'Localização',
-        value: profile.location!,
-        onSecondaryTap: () => _copyToClipboard(profile.location!, 'Localização copiada'),
+        value: profile.location,
+        onSecondaryTap: () => _copyToClipboard(profile.location, 'Localização copiada'),
         showCopyOnly: true,
       ),
   ];
@@ -123,7 +123,7 @@ class _ContactCardConfig {
 class _ContactCard extends StatelessWidget {
   final _ContactCardConfig config;
 
-  const _ContactCard({Key? key, required this.config}) : super(key: key);
+  const _ContactCard({super.key, required this.config});
 
   // Constantes para evitar recriação
   static const _cardConstraints = BoxConstraints(minWidth: 200, maxWidth: 420);

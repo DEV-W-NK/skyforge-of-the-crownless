@@ -9,7 +9,7 @@ import 'dart:math' as math;
 
 class Header extends StatefulWidget {
   final Profile profile;
-  Header({required this.profile});
+  const Header({super.key, required this.profile});
 
   @override
   _HeaderState createState() => _HeaderState();
@@ -137,7 +137,7 @@ class _HeaderState extends State<Header> with TickerProviderStateMixin {
     final isWide = MediaQuery.of(context).size.width > 900;
     final screenWidth = MediaQuery.of(context).size.width;
     
-    return Container(
+    return SizedBox(
       height: MediaQuery.of(context).size.height * 0.85,
       child: Stack(
         children: [

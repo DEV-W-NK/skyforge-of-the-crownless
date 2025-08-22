@@ -4,7 +4,7 @@ import 'package:portifolio/Theme/ds3_pallet.dart';
 class EducationSection extends StatelessWidget {
   final List<Education> educationList;
 
-  const EducationSection({Key? key, required this.educationList}) : super(key: key);
+  const EducationSection({super.key, required this.educationList});
 
   @override
   Widget build(BuildContext context) {

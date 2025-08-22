@@ -17,6 +17,8 @@ import 'package:visibility_detector/visibility_detector.dart';
 /// Página principal do portfólio/currículo.
 /// Exibe header animado, partículas, experiências, projetos, escolaridade, skills e contato.
 class HomePage extends StatefulWidget {
+  const HomePage({super.key});
+
   @override
   _HomePageState createState() => _HomePageState();
 }
@@ -171,7 +173,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                   return snapshot.data!;
                 }
                 // Placeholder durante carregamento
-                return Container(
+                return SizedBox(
                   height: 100,
                   child: Center(
                     child: CircularProgressIndicator(
@@ -938,8 +940,8 @@ class AnimatedOnVisible extends StatefulWidget {
     this.duration = const Duration(milliseconds: 700),
     this.offsetY = 60,
     this.curve = Curves.easeOutCubic,
-    Key? key,
-  }) : super(key: key);
+    super.key,
+  });
 
   @override
   State<AnimatedOnVisible> createState() => _AnimatedOnVisibleState();
@@ -1000,7 +1002,7 @@ class _AnimatedOnVisibleState extends State<AnimatedOnVisible>
 // Widget para lazy loading e descarregamento de cada seção
 class _LazySection extends StatefulWidget {
   final WidgetBuilder builder;
-  const _LazySection({Key? key, required this.builder}) : super(key: key);
+  const _LazySection({super.key, required this.builder});
 
   @override
   State<_LazySection> createState() => _LazySectionState();
@@ -1041,11 +1043,11 @@ class OptimizedProjectCard extends StatefulWidget {
   final int index;
 
   const OptimizedProjectCard({
-    Key? key,
+    super.key,
     required this.project,
     this.width,
     this.index = 0,
-  }) : super(key: key);
+  });
 
   @override
   State<OptimizedProjectCard> createState() => _OptimizedProjectCardState();

@@ -13,11 +13,11 @@ class ProjectCard extends StatefulWidget {
   final int index; // Índice para delay escalonado
 
   const ProjectCard({
-    Key? key,
+    super.key,
     required this.project,
     this.width,
     this.index = 0,
-  }) : super(key: key);
+  });
 
   @override
   State<ProjectCard> createState() => _ProjectCardState();

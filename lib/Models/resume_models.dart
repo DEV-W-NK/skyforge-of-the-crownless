@@ -103,6 +103,7 @@ final projects = [
     title: 'Sistema de Controle de Acesso Mobile',
     subtitle: 'Java Android, Firebase, GPS',
     tech: ['Java', 'Firebase', 'Geofencing'],
+    url: 'https://github.com/DEV-W-NK/Granith-Geoforce-App',
     bullets: [
       'Controle de presença com geolocalização e geofencing',
       'Sincronização offline com cache local',
@@ -115,6 +116,7 @@ final projects = [
     title: 'Plataforma de Gestão e Relatórios',
     subtitle: 'Flutter, Firebase, Node.js',
     tech: ['Flutter', 'Firestore', 'Node.js'],
+    url: '',
     bullets: [
       'Controle de horas e geração de relatórios financeiros',
       'Interface responsiva para visualização de dados',
@@ -127,6 +129,7 @@ final projects = [
     title: 'Sistema IoT de Monitoramento Ambiental',
     subtitle: 'ESP32, C++, MQTT, Firebase',
     tech: ['C++', 'ESP32', 'MQTT', 'Firebase'],
+    url: '',
     bullets: [
       'Monitoramento de qualidade do ar em tempo real',
       'Uso de sensores DHT22 e PMS5003',
@@ -139,6 +142,7 @@ final projects = [
     title: 'Assistente Inteligente de Gestão de Projetos',
     subtitle: 'Flutter, Gemini AI, Firebase, Google Calendar API',
     tech: ['Flutter', 'Gemini AI', 'Firebase', 'Google Calendar API'],
+    url: '',
     bullets: [
       'Chatbot integrado para gestão automatizada de projetos',
       'Análise inteligente de complexidade e recursos necessários',

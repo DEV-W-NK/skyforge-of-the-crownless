@@ -77,7 +77,7 @@ class ExperienceTimeline extends StatelessWidget {
     ),
   ];
 
-  ExperienceTimeline({required List<Experience> experiences});
+  ExperienceTimeline({super.key, required List<Experience> experiences});
 
   @override
   Widget build(BuildContext context) {
@@ -98,11 +98,11 @@ class ExperienceTile extends StatefulWidget {
   final bool isLast;
 
   const ExperienceTile({
-    Key? key,
+    super.key,
     required this.exp,
     required this.index,
     required this.isLast,
-  }) : super(key: key);
+  });
 
   @override
   _ExperienceTileState createState() => _ExperienceTileState();
