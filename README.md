@@ -15,7 +15,10 @@ Sou desenvolvedor apaixonado por tecnologia, com interesse em Flutter, Android (
 - **Flutter & Dart** – Desenvolvimento cross-platform para Web, Android e Desktop  
 - **Android (Java/Kotlin)** – Apps nativos e integração com hardware  
 - **C++ & Arduino** – Experimentos, protótipos e códigos low-level  
-- **Firebase** – Hosting, Functions, Firestore, autenticação e deploy automático  
+- **Firebase** – Hosting, Functions, Firestore, autenticação e deploy automático
+- **Supabase** - Auth, Postgree SQL, Edge Functions
+- **C# e .net MAUI** -  Desenvolvimento cross-platform para eventos, e suas API´s
+- **SQL Server** - Manager de Banco de dados
 
 ---
 
