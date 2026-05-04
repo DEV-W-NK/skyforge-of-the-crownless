@@ -106,94 +106,86 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     _sections.addAll([
       _SectionBuilder(
         key: const ValueKey('about'),
-        builder:
-            (context) =>
-                _buildAnimatedSection('Sobre mim', _buildAboutSection(), 0),
+        builder: (context) => _buildAnimatedSection(
+          'Resumo profissional',
+          _buildAboutSection(),
+          0,
+        ),
       ),
       _SectionBuilder(
         key: const ValueKey('exp'),
-        builder:
-            (context) => _buildAnimatedSection(
-              'Experiência',
-              ExperienceTimeline(experiences: experiences),
-              200,
-            ),
+        builder: (context) => _buildAnimatedSection(
+          'Experiência',
+          ExperienceTimeline(experiences: experiences),
+          200,
+        ),
       ),
       _SectionBuilder(
         key: const ValueKey('projects'),
-        builder:
-            (context) => _buildAnimatedSection(
-              'Projetos',
-              _buildProjectsSection(MediaQuery.of(context).size.width > 900),
-              400,
-            ),
+        builder: (context) => _buildAnimatedSection(
+          'Projetos',
+          _buildProjectsSection(MediaQuery.of(context).size.width > 900),
+          400,
+        ),
       ),
       _SectionBuilder(
         key: const ValueKey('education'),
-        builder:
-            (context) => _buildAnimatedSection(
-              'Escolaridade',
-              EducationSection(
-                educationList: [
-                  Education(
-                    degree: 'Bacharelado em Engenharia da Computação',
-                    institution:
-                        'Universidade Virtual do Estado de São Paulo (UNIVESP)',
-                    period: '2025 – 2030',
-                  ),
-                  Education(
-                    degree: 'Técnico em Desenvolvimento de Sistemas',
-                    institution: 'Etec Professor Basilides de Godoy',
-                    period: '2023 – 2024',
-                  ),
-                  Education(
-                    degree: 'Curso de Mecatrônica',
-                    institution: 'Alura',
-                    period: '2023 – 2024',
-                  ),
-                ],
+        builder: (context) => _buildAnimatedSection(
+          'Formação acadêmica',
+          EducationSection(
+            educationList: [
+              Education(
+                degree: 'Engenharia da Computação (Bacharelado)',
+                institution:
+                    'Universidade Virtual do Estado de São Paulo (UNIVESP)',
+                period: 'Jun 2025 - Dez 2030',
               ),
-              500,
-            ),
+              Education(
+                degree: 'Técnico em Desenvolvimento de Sistemas',
+                institution: 'Etec Professor Basilides de Godoy',
+                period: 'Jun 2023 - Dez 2024',
+              ),
+            ],
+          ),
+          500,
+        ),
       ),
       _SectionBuilder(
         key: const ValueKey('skills'),
-        builder:
-            (context) => FutureBuilder<Widget>(
-              // Delay micro para não bloquear a UI thread
-              future: Future.microtask(
-                () => _buildAnimatedSection(
-                  'Skills',
-                  const SkillsRow(lazy: true),
-                  600,
+        builder: (context) => FutureBuilder<Widget>(
+          // Delay micro para não bloquear a UI thread
+          future: Future.microtask(
+            () => _buildAnimatedSection(
+              'Habilidades técnicas',
+              const SkillsRow(skills: coreSkills, lazy: true),
+              600,
+            ),
+          ),
+          builder: (context, snapshot) {
+            if (snapshot.hasData) {
+              return snapshot.data!;
+            }
+            // Placeholder durante carregamento
+            return SizedBox(
+              height: 100,
+              child: Center(
+                child: CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    CyberpunkColors.primaryOrange.withOpacity(0.5),
+                  ),
                 ),
               ),
-              builder: (context, snapshot) {
-                if (snapshot.hasData) {
-                  return snapshot.data!;
-                }
-                // Placeholder durante carregamento
-                return SizedBox(
-                  height: 100,
-                  child: Center(
-                    child: CircularProgressIndicator(
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                        CyberpunkColors.primaryOrange.withOpacity(0.5),
-                      ),
-                    ),
-                  ),
-                );
-              },
-            ),
+            );
+          },
+        ),
       ),
       _SectionBuilder(
         key: const ValueKey('contact'),
-        builder:
-            (context) => _buildAnimatedSection(
-              'Contato',
-              ContactSection(profile: profile),
-              800,
-            ),
+        builder: (context) => _buildAnimatedSection(
+          'Contato',
+          ContactSection(profile: profile),
+          800,
+        ),
       ),
     ]);
   }
@@ -739,9 +731,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
         ],
       ),
       child: Text(
-        'Desenvolvedor apaixonado por tecnologia, especializado em Flutter, Android (Java) e C++. '
-        'Atuo no desenvolvimento de soluções mobile, integrações IoT e backends serverless, unindo desempenho e inovação. '
-        'Busco criar projetos que aliem design refinado, eficiência e experiências marcantes para o usuário.',
+        professionalSummary,
         style: TextStyle(
           fontSize: isMobile ? 16 : 18,
           color: CyberpunkColors.terminalGreen,
@@ -764,20 +754,19 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
           spacing: 16,
           runSpacing: 20,
           alignment: WrapAlignment.center, // Centraliza os cards
-          children:
-              projects.asMap().entries.map((entry) {
-                final index = entry.key;
-                final project = entry.value;
+          children: projects.asMap().entries.map((entry) {
+            final index = entry.key;
+            final project = entry.value;
 
-                return SizedBox(
-                  width: cardWidth,
-                  child: ProjectCard(
-                    project: project,
-                    width: cardWidth,
-                    index: index, // Passa o índice para delay escalonado
-                  ),
-                );
-              }).toList(),
+            return SizedBox(
+              width: cardWidth,
+              child: ProjectCard(
+                project: project,
+                width: cardWidth,
+                index: index, // Passa o índice para delay escalonado
+              ),
+            );
+          }).toList(),
         ),
       );
     } else {
@@ -985,14 +974,13 @@ class _AnimatedOnVisibleState extends State<AnimatedOnVisible>
       onVisibilityChanged: _onVisibilityChanged,
       child: AnimatedBuilder(
         animation: _controller,
-        builder:
-            (context, child) => Opacity(
-              opacity: _fade.value,
-              child: Transform.translate(
-                offset: Offset(0, _slide.value.dy * 100),
-                child: child,
-              ),
-            ),
+        builder: (context, child) => Opacity(
+          opacity: _fade.value,
+          child: Transform.translate(
+            offset: Offset(0, _slide.value.dy * 100),
+            child: child,
+          ),
+        ),
         child: widget.child,
       ),
     );
@@ -1022,10 +1010,9 @@ class _LazySectionState extends State<_LazySection> {
           setState(() => _visible = isNowVisible);
         }
       },
-      child:
-          _visible
-              ? widget.builder(context)
-              : const SizedBox(height: 180), // Placeholder com altura menor
+      child: _visible
+          ? widget.builder(context)
+          : const SizedBox(height: 180), // Placeholder com altura menor
     );
   }
 }

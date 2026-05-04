@@ -11,12 +11,20 @@ class SkillsRow extends StatefulWidget {
 
   /// [skills] pode ser passado ou usa uma lista padrão.
   /// [lazy] controla se deve usar carregamento preguiçoso (padrão: true)
-  const SkillsRow({
-    super.key,
-    List<String>? skills,
-    this.lazy = true,
-  })  : skills = skills ??
-            const ['Flutter', 'Dart', 'Java','Mobile', 'C++', 'Firebase', 'Node.js', 'MQTT', 'ESP32'];
+  const SkillsRow({super.key, List<String>? skills, this.lazy = true})
+    : skills =
+          skills ??
+          const [
+            'Flutter',
+            'Dart',
+            'Java',
+            'Mobile',
+            'C++',
+            'Firebase',
+            'Node.js',
+            'MQTT',
+            'ESP32',
+          ];
 
   @override
   State<SkillsRow> createState() => _SkillsRowState();
@@ -25,14 +33,14 @@ class SkillsRow extends StatefulWidget {
 class _SkillsRowState extends State<SkillsRow> {
   bool _isVisible = false;
   bool _hasBeenBuilt = false;
-  
+
   // Cache estático para evitar recalcular a mesma skill múltiplas vezes
   static final Map<String, _SkillData> _skillCache = {};
 
   @override
   void initState() {
     super.initState();
-    
+
     // Se não for lazy, renderiza imediatamente
     if (!widget.lazy) {
       _isVisible = true;
@@ -57,7 +65,7 @@ class _SkillsRowState extends State<SkillsRow> {
   /// Pre-carrega dados das skills em cache para evitar rebuild
   void _preloadSkillData() {
     if (_hasBeenBuilt) return;
-    
+
     for (final skill in widget.skills) {
       if (!_skillCache.containsKey(skill)) {
         _skillCache[skill] = _SkillData(
@@ -109,15 +117,54 @@ class _SkillsRowState extends State<SkillsRow> {
   IconData? _iconFor(String s) {
     final n = s.toLowerCase();
     switch (true) {
-      case _ when n.contains('flutter'): return Icons.flutter_dash;
-      case _ when n.contains('dart'): return Icons.code;
-      case _ when n.contains('java'): return Icons.code;
-      case _ when n.contains('c++'): return Icons.memory;
-      case _ when n.contains('firebase'): return Icons.cloud;
-      case _ when n.contains('node'): return Icons.storage;
-      case _ when n.contains('mqtt'): return Icons.sensors;
-      case _ when n.contains('esp'): return Icons.developer_board;
-      default: return null;
+      case _ when n.contains('flutter'):
+        return Icons.flutter_dash;
+      case _ when n.contains('dart'):
+        return Icons.code;
+      case _ when n.contains('.net') || n.contains('maui') || n.contains('c#'):
+        return Icons.phone_android;
+      case _ when n.contains('android'):
+        return Icons.android;
+      case _ when n.contains('java'):
+        return Icons.code;
+      case _ when n.contains('type') || n.contains('javascript'):
+        return Icons.code;
+      case _
+          when n.contains('sql') ||
+              n.contains('postgres') ||
+              n.contains('supabase') ||
+              n.contains('mysql'):
+        return Icons.storage;
+      case _
+          when n.contains('clean') ||
+              n.contains('mvvm') ||
+              n.contains('provider') ||
+              n.contains('riverpod') ||
+              n.contains('bloc') ||
+              n.contains('mobx'):
+        return Icons.account_tree;
+      case _ when n.contains('c++'):
+        return Icons.memory;
+      case _ when n.contains('firebase'):
+        return Icons.cloud;
+      case _ when n.contains('rest'):
+        return Icons.api;
+      case _ when n.contains('github') || n.contains('cloud'):
+        return Icons.cloud_queue;
+      case _ when n.contains('gemini'):
+        return Icons.psychology;
+      case _ when n.contains('skia'):
+        return Icons.image;
+      case _ when n.contains('messaging'):
+        return Icons.notifications;
+      case _ when n.contains('node'):
+        return Icons.storage;
+      case _ when n.contains('mqtt'):
+        return Icons.sensors;
+      case _ when n.contains('esp'):
+        return Icons.developer_board;
+      default:
+        return null;
     }
   }
 
@@ -127,10 +174,28 @@ class _SkillsRowState extends State<SkillsRow> {
     switch (true) {
       case _ when n.contains('flutter') || n.contains('dart'):
         return [CyberpunkColors.screenTeal, CyberpunkColors.primaryOrange];
-      case _ when n.contains('java') || n.contains('c++'):
+      case _ when n.contains('.net') || n.contains('maui') || n.contains('c#'):
+        return [CyberpunkColors.neonBlue, CyberpunkColors.primaryOrange];
+      case _
+          when n.contains('java') || n.contains('c++') || n.contains('python'):
         return [CyberpunkColors.primaryOrange, CyberpunkColors.glowYellow];
-      case _ when n.contains('firebase') || n.contains('node'):
+      case _
+          when n.contains('firebase') ||
+              n.contains('node') ||
+              n.contains('supabase') ||
+              n.contains('postgres') ||
+              n.contains('sql'):
         return [CyberpunkColors.neonBlue, CyberpunkColors.screenTeal];
+      case _
+          when n.contains('clean') ||
+              n.contains('mvvm') ||
+              n.contains('provider') ||
+              n.contains('riverpod') ||
+              n.contains('bloc') ||
+              n.contains('mobx'):
+        return [CyberpunkColors.primaryOrange, CyberpunkColors.neonBlue];
+      case _ when n.contains('gemini') || n.contains('skia'):
+        return [CyberpunkColors.glowYellow, CyberpunkColors.primaryOrange];
       case _ when n.contains('mqtt') || n.contains('esp'):
         return [CyberpunkColors.terminalGreen, CyberpunkColors.screenTeal];
       default:
@@ -142,15 +207,36 @@ class _SkillsRowState extends State<SkillsRow> {
   String? _skillUrl(String s) {
     final n = s.toLowerCase();
     switch (true) {
-      case _ when n.contains('flutter'): return 'https://flutter.dev/';
-      case _ when n.contains('dart'): return 'https://dart.dev/';
-      case _ when n.contains('java'): return 'https://www.java.com/';
-      case _ when n.contains('c++'): return 'https://isocpp.org/';
-      case _ when n.contains('firebase'): return 'https://firebase.google.com/';
-      case _ when n.contains('node'): return 'https://nodejs.org/';
-      case _ when n.contains('mqtt'): return 'https://mqtt.org/';
-      case _ when n.contains('esp'): return 'https://www.espressif.com/en/products/socs/esp32';
-      default: return null;
+      case _ when n.contains('flutter'):
+        return 'https://flutter.dev/';
+      case _ when n.contains('dart'):
+        return 'https://dart.dev/';
+      case _ when n.contains('.net') || n.contains('maui') || n.contains('c#'):
+        return 'https://dotnet.microsoft.com/';
+      case _ when n.contains('java'):
+        return 'https://www.java.com/';
+      case _ when n.contains('c++'):
+        return 'https://isocpp.org/';
+      case _ when n.contains('supabase'):
+        return 'https://supabase.com/';
+      case _ when n.contains('firebase'):
+        return 'https://firebase.google.com/';
+      case _ when n.contains('postgres'):
+        return 'https://www.postgresql.org/';
+      case _ when n.contains('mysql'):
+        return 'https://www.mysql.com/';
+      case _ when n.contains('sqlite'):
+        return 'https://www.sqlite.org/';
+      case _ when n.contains('node'):
+        return 'https://nodejs.org/';
+      case _ when n.contains('mqtt'):
+        return 'https://mqtt.org/';
+      case _ when n.contains('gemini'):
+        return 'https://ai.google.dev/';
+      case _ when n.contains('esp'):
+        return 'https://www.espressif.com/en/products/socs/esp32';
+      default:
+        return null;
     }
   }
 }
@@ -173,7 +259,7 @@ class _SkillData {
 /// Widget individual para cada skill, com animações otimizadas.
 class _SkillPill extends StatefulWidget {
   final _SkillData skillData;
-  
+
   const _SkillPill({super.key, required this.skillData});
 
   @override
@@ -182,50 +268,46 @@ class _SkillPill extends StatefulWidget {
 
 class _SkillPillState extends State<_SkillPill>
     with SingleTickerProviderStateMixin {
-  
   // Controllers para animações otimizadas
   late AnimationController _animationController;
   late Animation<double> _scaleAnimation;
   late Animation<Color?> _borderAnimation;
   late Animation<double> _glowAnimation;
-  
+
   bool _isHovered = false;
   bool _isDisposed = false;
 
   @override
   void initState() {
     super.initState();
-    
+
     // Inicializar controller único para todas as animações
     _animationController = AnimationController(
-      duration: const Duration(milliseconds: 150), // Reduzido para mais responsivo
+      duration: const Duration(
+        milliseconds: 150,
+      ), // Reduzido para mais responsivo
       vsync: this,
     );
-    
+
     // Animações com curvas otimizadas
-    _scaleAnimation = Tween<double>(
-      begin: 1.0,
-      end: 1.02,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeOutCubic,
-    ));
-    
-    _borderAnimation = ColorTween(
-      begin: CyberpunkColors.mediumGray.withOpacity(0.18),
-      end: CyberpunkColors.primaryOrange.withOpacity(0.9),
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeOutCubic,
-    ));
-    
-    _glowAnimation = Tween<double>(
-      begin: 0.0,
-      end: 0.12,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeOutCubic,
-    ));
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 1.02).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeOutCubic),
+    );
+
+    _borderAnimation =
+        ColorTween(
+          begin: CyberpunkColors.mediumGray.withOpacity(0.18),
+          end: CyberpunkColors.primaryOrange.withOpacity(0.9),
+        ).animate(
+          CurvedAnimation(
+            parent: _animationController,
+            curve: Curves.easeOutCubic,
+          ),
+        );
+
+    _glowAnimation = Tween<double>(begin: 0.0, end: 0.12).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeOutCubic),
+    );
   }
 
   @override
@@ -237,12 +319,12 @@ class _SkillPillState extends State<_SkillPill>
 
   void _onHoverChanged(bool isHovered) {
     if (_isDisposed) return;
-    
+
     if (_isHovered != isHovered) {
       setState(() {
         _isHovered = isHovered;
       });
-      
+
       if (isHovered) {
         _animationController.forward();
       } else {
@@ -280,7 +362,9 @@ class _SkillPillState extends State<_SkillPill>
                     // Glow shadow animado - só renderiza se necessário
                     if (_animationController.value > 0) ...[
                       BoxShadow(
-                        color: CyberpunkColors.primaryOrange.withOpacity(_glowAnimation.value),
+                        color: CyberpunkColors.primaryOrange.withOpacity(
+                          _glowAnimation.value,
+                        ),
                         blurRadius: 16 * _animationController.value,
                         spreadRadius: 1 * _animationController.value,
                         offset: Offset(0, 6 * _animationController.value),
@@ -295,7 +379,10 @@ class _SkillPillState extends State<_SkillPill>
                     borderRadius: BorderRadius.circular(12),
                     onTap: () => _openSkillLink(),
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12.0,
+                        vertical: 8.0,
+                      ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
@@ -316,8 +403,8 @@ class _SkillPillState extends State<_SkillPill>
                           // Ícone (se houver)
                           if (widget.skillData.icon != null) ...[
                             Icon(
-                              widget.skillData.icon, 
-                              size: 16, 
+                              widget.skillData.icon,
+                              size: 16,
                               color: CyberpunkColors.screenTeal,
                             ),
                             const SizedBox(width: 8),

@@ -8,7 +8,7 @@ import 'package:url_launcher/url_launcher.dart';
 class ContactSection extends StatelessWidget {
   final Profile profile;
 
- ContactSection({super.key, required this.profile});
+  ContactSection({super.key, required this.profile});
 
   // Cache das configurações dos cartões para evitar recriação
   late final List<_ContactCardConfig> _contactConfigs = [
@@ -19,13 +19,24 @@ class ContactSection extends StatelessWidget {
       onPrimaryTap: () => _openEmail(profile.email),
       onSecondaryTap: () => _copyToClipboard(profile.email, 'Email copiado'),
     ),
+    if (_isNotEmpty(profile.phone))
+      _ContactCardConfig(
+        icon: Icons.phone_outlined,
+        title: 'Telefone',
+        value: profile.phone,
+        onPrimaryTap: () => _openPhone(profile.phone),
+        onSecondaryTap: () =>
+            _copyToClipboard(profile.phone, 'Telefone copiado'),
+        primaryLabel: 'Ligar',
+      ),
     if (_isNotEmpty(profile.linkedin))
       _ContactCardConfig(
         icon: Icons.link,
         title: 'LinkedIn',
         value: profile.linkedin,
         onPrimaryTap: () => _openLink(profile.linkedin),
-        onSecondaryTap: () => _copyToClipboard(profile.linkedin, 'Link do LinkedIn copiado'),
+        onSecondaryTap: () =>
+            _copyToClipboard(profile.linkedin, 'Link do LinkedIn copiado'),
         primaryLabel: 'Abrir',
       ),
     if (_isNotEmpty(profile.github))
@@ -34,7 +45,8 @@ class ContactSection extends StatelessWidget {
         title: 'GitHub',
         value: profile.github,
         onPrimaryTap: () => _openLink(profile.github),
-        onSecondaryTap: () => _copyToClipboard(profile.github, 'Link do GitHub copiado'),
+        onSecondaryTap: () =>
+            _copyToClipboard(profile.github, 'Link do GitHub copiado'),
         primaryLabel: 'Abrir',
       ),
     if (_isNotEmpty(profile.location))
@@ -42,7 +54,26 @@ class ContactSection extends StatelessWidget {
         icon: Icons.location_on_outlined,
         title: 'Localização',
         value: profile.location,
-        onSecondaryTap: () => _copyToClipboard(profile.location, 'Localização copiada'),
+        onSecondaryTap: () =>
+            _copyToClipboard(profile.location, 'Localização copiada'),
+        showCopyOnly: true,
+      ),
+    if (_isNotEmpty(profile.languages))
+      _ContactCardConfig(
+        icon: Icons.translate,
+        title: 'Idiomas',
+        value: profile.languages!,
+        onSecondaryTap: () =>
+            _copyToClipboard(profile.languages!, 'Idiomas copiados'),
+        showCopyOnly: true,
+      ),
+    if (_isNotEmpty(profile.availability))
+      _ContactCardConfig(
+        icon: Icons.work_outline,
+        title: 'Disponibilidade',
+        value: profile.availability!,
+        onSecondaryTap: () =>
+            _copyToClipboard(profile.availability!, 'Disponibilidade copiada'),
         showCopyOnly: true,
       ),
   ];
@@ -67,7 +98,7 @@ class ContactSection extends StatelessWidget {
       if (uri == null || !uri.hasScheme) {
         throw 'URL inválida: $url';
       }
-      
+
       if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
         throw 'Não foi possível abrir o link';
       }
@@ -84,9 +115,24 @@ class ContactSection extends StatelessWidget {
         path: email,
         queryParameters: {'subject': 'Contato via portfólio'},
       );
-      
+
       if (!await launchUrl(uri)) {
         throw 'Cliente de e-mail não encontrado';
+      }
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<void> _openPhone(String phone) async {
+    try {
+      final uri = Uri(
+        scheme: 'tel',
+        path: phone.replaceAll(RegExp(r'\s+'), ''),
+      );
+
+      if (!await launchUrl(uri)) {
+        throw 'Discador não encontrado';
       }
     } catch (e) {
       rethrow;
@@ -156,15 +202,9 @@ class _ContactCard extends StatelessWidget {
     return BoxDecoration(
       color: CyberpunkColors.charcoalGray,
       borderRadius: BorderRadius.circular(12),
-      border: Border.all(
-        color: CyberpunkColors.mediumGray.withOpacity(0.12),
-      ),
+      border: Border.all(color: CyberpunkColors.mediumGray.withOpacity(0.12)),
       boxShadow: const [
-        BoxShadow(
-          color: Colors.black45,
-          blurRadius: 8,
-          offset: Offset(0, 4),
-        ),
+        BoxShadow(color: Colors.black45, blurRadius: 8, offset: Offset(0, 4)),
       ],
     );
   }
@@ -177,10 +217,7 @@ class _ContactCard extends StatelessWidget {
         color: CyberpunkColors.darkGray,
         borderRadius: BorderRadius.circular(10),
       ),
-      child: Icon(
-        config.icon,
-        color: CyberpunkColors.screenTeal,
-      ),
+      child: Icon(config.icon, color: CyberpunkColors.screenTeal),
     );
   }
 
@@ -192,10 +229,7 @@ class _ContactCard extends StatelessWidget {
         children: [
           Text(
             config.title,
-            style: const TextStyle(
-              color: Colors.white70,
-              fontSize: 12,
-            ),
+            style: const TextStyle(color: Colors.white70, fontSize: 12),
           ),
           const SizedBox(height: 4),
           SelectableText(
@@ -218,10 +252,7 @@ class _ContactCard extends StatelessWidget {
 
     return Row(
       mainAxisSize: MainAxisSize.min,
-      children: [
-        _buildPrimaryButton(context),
-        _buildCopyButton(context),
-      ],
+      children: [_buildPrimaryButton(context), _buildCopyButton(context)],
     );
   }
 
@@ -229,13 +260,13 @@ class _ContactCard extends StatelessWidget {
     return IconButton(
       tooltip: config.primaryLabel,
       visualDensity: VisualDensity.compact,
-      onPressed: config.onPrimaryTap != null 
+      onPressed: config.onPrimaryTap != null
           ? () => _handleAction(context, config.onPrimaryTap!)
           : null,
       icon: Icon(
         Icons.open_in_new,
-        color: config.onPrimaryTap != null 
-            ? CyberpunkColors.primaryOrange 
+        color: config.onPrimaryTap != null
+            ? CyberpunkColors.primaryOrange
             : Colors.white24,
       ),
     );
@@ -248,10 +279,7 @@ class _ContactCard extends StatelessWidget {
       onPressed: config.onSecondaryTap != null
           ? () => _handleCopyAction(context)
           : null,
-      icon: Icon(
-        Icons.copy,
-        color: CyberpunkColors.neonBlue,
-      ),
+      icon: Icon(Icons.copy, color: CyberpunkColors.neonBlue),
     );
   }
 
@@ -260,9 +288,9 @@ class _ContactCard extends StatelessWidget {
       action();
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Erro: $e')));
       }
     }
   }
@@ -280,9 +308,9 @@ class _ContactCard extends StatelessWidget {
       }
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro ao copiar: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Erro ao copiar: $e')));
       }
     }
   }
