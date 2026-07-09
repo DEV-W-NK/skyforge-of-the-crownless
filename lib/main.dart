@@ -4,7 +4,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:portifolio/Pages/home_page.dart';
 import 'package:portifolio/Theme/ds3_pallet.dart';
 
-
 void main() {
   runApp(SkyforgeApp());
 }
@@ -12,12 +11,14 @@ void main() {
 class SkyforgeApp extends StatelessWidget {
   const SkyforgeApp({super.key});
 
-  @override   
+  @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Skyforge of the Crownless',
+      title: 'Granith Portfolio',
       theme: CyberpunkTheme.darkTheme.copyWith(
-        textTheme: GoogleFonts.interTextTheme(CyberpunkTheme.darkTheme.textTheme),
+        textTheme: GoogleFonts.interTextTheme(
+          CyberpunkTheme.darkTheme.textTheme,
+        ),
       ),
       home: HomePage(),
       debugShowCheckedModeBanner: false,

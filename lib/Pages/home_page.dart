@@ -6,6 +6,7 @@ import 'dart:math' as math;
 import 'package:portifolio/Models/resume_models.dart';
 import 'package:portifolio/Theme/ds3_pallet.dart';
 import 'package:portifolio/Widgets/contact_section.dart';
+import 'package:portifolio/Widgets/granith_showcase.dart';
 import 'package:portifolio/Widgets/project_card.dart';
 import 'package:portifolio/Widgets/skills_row.dart';
 import 'package:portifolio/Widgets/timeline.dart';
@@ -106,86 +107,101 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     _sections.addAll([
       _SectionBuilder(
         key: const ValueKey('about'),
-        builder: (context) => _buildAnimatedSection(
-          'Resumo profissional',
-          _buildAboutSection(),
-          0,
-        ),
+        builder:
+            (context) => _buildAnimatedSection(
+              'Resumo profissional',
+              _buildAboutSection(),
+              0,
+            ),
+      ),
+      _SectionBuilder(
+        key: const ValueKey('granith'),
+        builder:
+            (context) => _buildAnimatedSection(
+              'Granith em destaque',
+              GranithShowcase(onOpenLink: _openLink),
+              120,
+            ),
       ),
       _SectionBuilder(
         key: const ValueKey('exp'),
-        builder: (context) => _buildAnimatedSection(
-          'Experiência',
-          ExperienceTimeline(experiences: experiences),
-          200,
-        ),
+        builder:
+            (context) => _buildAnimatedSection(
+              'Experiência',
+              ExperienceTimeline(experiences: experiences),
+              200,
+            ),
       ),
       _SectionBuilder(
         key: const ValueKey('projects'),
-        builder: (context) => _buildAnimatedSection(
-          'Projetos',
-          _buildProjectsSection(MediaQuery.of(context).size.width > 900),
-          400,
-        ),
+        builder:
+            (context) => _buildAnimatedSection(
+              'Projetos e repositorios',
+              _buildProjectsSection(MediaQuery.of(context).size.width > 900),
+              400,
+            ),
       ),
       _SectionBuilder(
         key: const ValueKey('education'),
-        builder: (context) => _buildAnimatedSection(
-          'Formação acadêmica',
-          EducationSection(
-            educationList: [
-              Education(
-                degree: 'Engenharia da Computação (Bacharelado)',
-                institution:
-                    'Universidade Virtual do Estado de São Paulo (UNIVESP)',
-                period: 'Jun 2025 - Dez 2030',
+        builder:
+            (context) => _buildAnimatedSection(
+              'Formação acadêmica',
+              EducationSection(
+                educationList: [
+                  Education(
+                    degree: 'Engenharia da Computação (Bacharelado)',
+                    institution:
+                        'Universidade Virtual do Estado de São Paulo (UNIVESP)',
+                    period: 'Jun 2025 - Dez 2030',
+                  ),
+                  Education(
+                    degree: 'Técnico em Desenvolvimento de Sistemas',
+                    institution: 'Etec Professor Basilides de Godoy',
+                    period: 'Jun 2023 - Dez 2024',
+                  ),
+                ],
               ),
-              Education(
-                degree: 'Técnico em Desenvolvimento de Sistemas',
-                institution: 'Etec Professor Basilides de Godoy',
-                period: 'Jun 2023 - Dez 2024',
-              ),
-            ],
-          ),
-          500,
-        ),
+              500,
+            ),
       ),
       _SectionBuilder(
         key: const ValueKey('skills'),
-        builder: (context) => FutureBuilder<Widget>(
-          // Delay micro para não bloquear a UI thread
-          future: Future.microtask(
-            () => _buildAnimatedSection(
-              'Habilidades técnicas',
-              const SkillsRow(skills: coreSkills, lazy: true),
-              600,
-            ),
-          ),
-          builder: (context, snapshot) {
-            if (snapshot.hasData) {
-              return snapshot.data!;
-            }
-            // Placeholder durante carregamento
-            return SizedBox(
-              height: 100,
-              child: Center(
-                child: CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation<Color>(
-                    CyberpunkColors.primaryOrange.withOpacity(0.5),
-                  ),
+        builder:
+            (context) => FutureBuilder<Widget>(
+              // Delay micro para não bloquear a UI thread
+              future: Future.microtask(
+                () => _buildAnimatedSection(
+                  'Habilidades técnicas',
+                  const SkillsRow(skills: coreSkills, lazy: true),
+                  600,
                 ),
               ),
-            );
-          },
-        ),
+              builder: (context, snapshot) {
+                if (snapshot.hasData) {
+                  return snapshot.data!;
+                }
+                // Placeholder durante carregamento
+                return SizedBox(
+                  height: 100,
+                  child: Center(
+                    child: CircularProgressIndicator(
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        CyberpunkColors.primaryOrange.withOpacity(0.5),
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
       ),
       _SectionBuilder(
         key: const ValueKey('contact'),
-        builder: (context) => _buildAnimatedSection(
-          'Contato',
-          ContactSection(profile: profile),
-          800,
-        ),
+        builder:
+            (context) => _buildAnimatedSection(
+              'Contato',
+              ContactSection(profile: profile),
+              800,
+            ),
       ),
     ]);
   }
@@ -340,15 +356,24 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
 
           // Conteúdo centralizado: nome, título, botões
           Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                _buildAnimatedTitle(),
-                const SizedBox(height: 32),
-                _buildAnimatedSubtitle(),
-                const SizedBox(height: 48),
-                _buildGlowingButtons(),
-              ],
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 1120),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _buildGranithBadge(),
+                    const SizedBox(height: 28),
+                    _buildAnimatedTitle(),
+                    const SizedBox(height: 32),
+                    _buildAnimatedSubtitle(),
+                    const SizedBox(height: 42),
+                    _buildGlowingButtons(),
+                  ],
+                ),
+              ),
             ),
           ),
 
@@ -383,6 +408,62 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   }
 
   /// Título animado com efeito de escala e gradiente.
+  Widget _buildGranithBadge() {
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0.0, end: 1.0),
+      duration: const Duration(milliseconds: 1200),
+      curve: Curves.easeOutCubic,
+      builder: (context, value, child) {
+        return Transform.translate(
+          offset: Offset(0, 18 * (1 - value)),
+          child: Opacity(
+            opacity: value,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              decoration: BoxDecoration(
+                color: CyberpunkColors.charcoalGray.withOpacity(0.82),
+                borderRadius: BorderRadius.circular(999),
+                border: Border.all(
+                  color: CyberpunkColors.primaryOrange.withOpacity(0.35),
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: CyberpunkColors.primaryOrange.withOpacity(0.12),
+                    blurRadius: 18,
+                    spreadRadius: 1,
+                  ),
+                ],
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(9),
+                    child: Image.asset(
+                      'Assets/granith_app_icon.png',
+                      width: 30,
+                      height: 30,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  const Text(
+                    'Granith Portfolio',
+                    style: TextStyle(
+                      color: CyberpunkColors.terminalGreen,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.4,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   Widget _buildAnimatedTitle() {
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.0, end: 1.0),
@@ -525,21 +606,35 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
 
   /// Botões animados para GitHub e LinkedIn.
   Widget _buildGlowingButtons() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        _buildGlowingButton(
-          'GitHub',
-          Icons.code,
-          () => _openLink(profile.github),
-        ),
-        const SizedBox(width: 24),
-        _buildGlowingButton(
-          'LinkedIn',
-          Icons.link,
-          () => _openLink(profile.linkedin),
-        ),
-      ],
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      child: Wrap(
+        alignment: WrapAlignment.center,
+        spacing: 16,
+        runSpacing: 14,
+        children: [
+          _buildGlowingButton(
+            'GitHub',
+            Icons.code,
+            () => _openLink(profile.github),
+          ),
+          _buildGlowingButton(
+            'LinkedIn',
+            Icons.link,
+            () => _openLink(profile.linkedin),
+          ),
+          _buildGlowingButton(
+            'ERP Web',
+            Icons.dashboard_customize_outlined,
+            () => _openLink(GranithLinks.erp),
+          ),
+          _buildGlowingButton(
+            'Mobile',
+            Icons.phone_android_outlined,
+            () => _openLink(GranithLinks.mobile),
+          ),
+        ],
+      ),
     );
   }
 
@@ -754,19 +849,20 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
           spacing: 16,
           runSpacing: 20,
           alignment: WrapAlignment.center, // Centraliza os cards
-          children: projects.asMap().entries.map((entry) {
-            final index = entry.key;
-            final project = entry.value;
+          children:
+              projects.asMap().entries.map((entry) {
+                final index = entry.key;
+                final project = entry.value;
 
-            return SizedBox(
-              width: cardWidth,
-              child: ProjectCard(
-                project: project,
-                width: cardWidth,
-                index: index, // Passa o índice para delay escalonado
-              ),
-            );
-          }).toList(),
+                return SizedBox(
+                  width: cardWidth,
+                  child: ProjectCard(
+                    project: project,
+                    width: cardWidth,
+                    index: index, // Passa o índice para delay escalonado
+                  ),
+                );
+              }).toList(),
         ),
       );
     } else {
@@ -974,13 +1070,14 @@ class _AnimatedOnVisibleState extends State<AnimatedOnVisible>
       onVisibilityChanged: _onVisibilityChanged,
       child: AnimatedBuilder(
         animation: _controller,
-        builder: (context, child) => Opacity(
-          opacity: _fade.value,
-          child: Transform.translate(
-            offset: Offset(0, _slide.value.dy * 100),
-            child: child,
-          ),
-        ),
+        builder:
+            (context, child) => Opacity(
+              opacity: _fade.value,
+              child: Transform.translate(
+                offset: Offset(0, _slide.value.dy * 100),
+                child: child,
+              ),
+            ),
         child: widget.child,
       ),
     );
@@ -1010,9 +1107,10 @@ class _LazySectionState extends State<_LazySection> {
           setState(() => _visible = isNowVisible);
         }
       },
-      child: _visible
-          ? widget.builder(context)
-          : const SizedBox(height: 180), // Placeholder com altura menor
+      child:
+          _visible
+              ? widget.builder(context)
+              : const SizedBox(height: 180), // Placeholder com altura menor
     );
   }
 }

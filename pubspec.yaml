@@ -28,8 +28,10 @@ flutter:
 
   assets:
     - Assets/TheCrownlessKing.mp3
+    - Assets/granith_app_icon.png
+    - Assets/granith_logo_wordmark.png
 
 flutter_icons:
   android: true
   ios: true
-  image_path: "Assets/SkyForgeIcon.png"
+  image_path: "Assets/granith_app_icon.png"
