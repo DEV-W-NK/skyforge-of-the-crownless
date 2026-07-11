@@ -1,405 +1,142 @@
-// lib/pages/home_page.dart
+import 'dart:math' as math;
+import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'dart:math' as math;
 import 'package:portifolio/Models/resume_models.dart';
 import 'package:portifolio/Theme/ds3_pallet.dart';
-import 'package:portifolio/Widgets/contact_section.dart';
-import 'package:portifolio/Widgets/granith_showcase.dart';
-import 'package:portifolio/Widgets/project_card.dart';
-import 'package:portifolio/Widgets/skills_row.dart';
-import 'package:portifolio/Widgets/timeline.dart';
-import 'package:portifolio/Widgets/education_section.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:just_audio/just_audio.dart';
-import 'package:visibility_detector/visibility_detector.dart';
 
-/// Página principal do portfólio/currículo.
-/// Exibe header animado, partículas, experiências, projetos, escolaridade, skills e contato.
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
   @override
-  _HomePageState createState() => _HomePageState();
+  State<HomePage> createState() => _HomePageState();
 }
 
-/// Estado da HomePage, responsável por animações e controle de rolagem.
 class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
-  // Controladores de animação
-  late AnimationController _fadeController;
-  late AnimationController _particleController;
-  late AnimationController _glowController;
-
-  // Animações
-  late Animation<double> _fadeAnimation;
-  late Animation<double> _particleAnimation;
-  late Animation<double> _glowAnimation;
-
-  // Controle de rolagem
+  late final AnimationController _ambientController;
   final ScrollController _scrollController = ScrollController();
-  double _scrollOffset = 0.0;
 
-  // Lista de partículas para o fundo animado
-  List<Particle> _particles = [];
+  final GlobalKey _granithKey = GlobalKey();
+  final GlobalKey _systemKey = GlobalKey();
+  final GlobalKey _projectsKey = GlobalKey();
+  final GlobalKey _contactKey = GlobalKey();
 
-  // Player de música de fundo
-  late final AudioPlayer _audioPlayer;
-
-  // Lista de seções para lazy loading
-  final List<_SectionBuilder> _sections = [];
+  double _scrollOffset = 0;
 
   @override
   void initState() {
     super.initState();
-
-    // Inicializa controladores de animação
-    _fadeController = AnimationController(
-      duration: Duration(seconds: 2),
+    _ambientController = AnimationController(
       vsync: this,
-    );
-
-    _particleController = AnimationController(
-      duration: Duration(seconds: 30),
-      vsync: this,
+      duration: const Duration(seconds: 14),
     )..repeat();
-
-    _glowController = AnimationController(
-      duration: Duration(seconds: 3),
-      vsync: this,
-    )..repeat(reverse: true);
-
-    // Inicializa animações
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _fadeController, curve: Curves.easeInOut),
-    );
-
-    _particleAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(_particleController);
-
-    _glowAnimation = Tween<double>(begin: 0.3, end: 1.0).animate(
-      CurvedAnimation(parent: _glowController, curve: Curves.easeInOut),
-    );
-
-    // Inicializa partículas do fundo
-    _initializeParticles();
-
-    // Atualiza offset do scroll para efeito parallax das partículas
     _scrollController.addListener(() {
-      setState(() {
-        _scrollOffset = _scrollController.offset;
-      });
+      if (!mounted) return;
+      setState(() => _scrollOffset = _scrollController.offset);
     });
-
-    // Inicia animação de fade-in da página
-    _fadeController.forward();
-
-    // Vibração sutil ao abrir a página
-    HapticFeedback.lightImpact();
-
-    // Inicializa o player de áudio e tenta tocar ao abrir
-    _audioPlayer = AudioPlayer();
-    _playBackgroundMusic();
-
-    // Inicializa a lista de seções para lazy loading
-    _sections.addAll([
-      _SectionBuilder(
-        key: const ValueKey('about'),
-        builder:
-            (context) => _buildAnimatedSection(
-              'Resumo profissional',
-              _buildAboutSection(),
-              0,
-            ),
-      ),
-      _SectionBuilder(
-        key: const ValueKey('granith'),
-        builder:
-            (context) => _buildAnimatedSection(
-              'Granith em destaque',
-              GranithShowcase(onOpenLink: _openLink),
-              120,
-            ),
-      ),
-      _SectionBuilder(
-        key: const ValueKey('exp'),
-        builder:
-            (context) => _buildAnimatedSection(
-              'Experiência',
-              ExperienceTimeline(experiences: experiences),
-              200,
-            ),
-      ),
-      _SectionBuilder(
-        key: const ValueKey('projects'),
-        builder:
-            (context) => _buildAnimatedSection(
-              'Projetos e repositorios',
-              _buildProjectsSection(MediaQuery.of(context).size.width > 900),
-              400,
-            ),
-      ),
-      _SectionBuilder(
-        key: const ValueKey('education'),
-        builder:
-            (context) => _buildAnimatedSection(
-              'Formação acadêmica',
-              EducationSection(
-                educationList: [
-                  Education(
-                    degree: 'Engenharia da Computação (Bacharelado)',
-                    institution:
-                        'Universidade Virtual do Estado de São Paulo (UNIVESP)',
-                    period: 'Jun 2025 - Dez 2030',
-                  ),
-                  Education(
-                    degree: 'Técnico em Desenvolvimento de Sistemas',
-                    institution: 'Etec Professor Basilides de Godoy',
-                    period: 'Jun 2023 - Dez 2024',
-                  ),
-                ],
-              ),
-              500,
-            ),
-      ),
-      _SectionBuilder(
-        key: const ValueKey('skills'),
-        builder:
-            (context) => FutureBuilder<Widget>(
-              // Delay micro para não bloquear a UI thread
-              future: Future.microtask(
-                () => _buildAnimatedSection(
-                  'Habilidades técnicas',
-                  const SkillsRow(skills: coreSkills, lazy: true),
-                  600,
-                ),
-              ),
-              builder: (context, snapshot) {
-                if (snapshot.hasData) {
-                  return snapshot.data!;
-                }
-                // Placeholder durante carregamento
-                return SizedBox(
-                  height: 100,
-                  child: Center(
-                    child: CircularProgressIndicator(
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                        CyberpunkColors.primaryOrange.withOpacity(0.5),
-                      ),
-                    ),
-                  ),
-                );
-              },
-            ),
-      ),
-      _SectionBuilder(
-        key: const ValueKey('contact'),
-        builder:
-            (context) => _buildAnimatedSection(
-              'Contato',
-              ContactSection(profile: profile),
-              800,
-            ),
-      ),
-    ]);
-  }
-
-  /// Inicializa a lista de partículas para o fundo animado.
-  void _initializeParticles() {
-    final random = math.Random();
-    _particles = List.generate(20, (index) {
-      // Reduzido de 50 para 20 para melhor desempenho
-      return Particle(
-        x: random.nextDouble(),
-        y: random.nextDouble(),
-        speed: 0.001 + random.nextDouble() * 0.003,
-        size: 1 + random.nextDouble() * 3,
-        opacity: 0.1 + random.nextDouble() * 0.4,
-      );
-    });
-  }
-
-  Future<void> _playBackgroundMusic() async {
-    try {
-      await _audioPlayer.setAsset('Assets/TheCrownlessKing.mp3');
-      await _audioPlayer.setLoopMode(LoopMode.one);
-      await _audioPlayer.setVolume(0.15); // Volume suave (0.0 a 1.0)
-      await _audioPlayer.play();
-    } catch (e) {
-      // Pode falhar no web por autoplay policy, ignore erro silenciosamente
-    }
   }
 
   @override
   void dispose() {
-    _fadeController.dispose();
-    _particleController.dispose();
-    _glowController.dispose();
+    _ambientController.dispose();
     _scrollController.dispose();
-    _audioPlayer.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final mq = MediaQuery.of(context);
-    final isWide = mq.size.width > 900;
+    final viewport = MediaQuery.sizeOf(context);
+    final isCompact = viewport.width < 760;
 
     return Scaffold(
       body: Stack(
         children: [
-          // Fundo animado com partículas
-          _buildAnimatedBackground(),
-
-          // Conteúdo principal com rolagem
-          SingleChildScrollView(
+          Positioned.fill(
+            child: AnimatedBuilder(
+              animation: _ambientController,
+              builder: (context, _) {
+                return CustomPaint(
+                  painter: _SkyforgeBackgroundPainter(
+                    progress: _ambientController.value,
+                    scrollOffset: _scrollOffset,
+                  ),
+                  child: const SizedBox.expand(),
+                );
+              },
+            ),
+          ),
+          CustomScrollView(
             controller: _scrollController,
             physics: const BouncingScrollPhysics(),
-            child: Column(
-              children: [
-                _buildParallaxHeader(isWide),
-                const SizedBox(height: 32), // Espaço entre header e conteúdo
-                _buildLazySections(isWide),
-                const SizedBox(height: 60), // Espaço no final
-              ],
-            ),
-          ),
-
-          // Overlay de névoa para efeito visual
-          _buildMistOverlay(),
-        ],
-      ),
-    );
-  }
-
-  // Lazy loading das seções principais com espaçamento otimizado
-  Widget _buildLazySections(bool isWide) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final isMobile = screenWidth < 600;
-
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: isWide ? 72 : 16),
-      child: ListView.separated(
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        itemCount: _sections.length,
-        separatorBuilder: (context, index) {
-          // Espaçamento diferenciado entre seções
-          return SizedBox(height: isMobile ? 56 : 72);
-        },
-        itemBuilder: (context, index) {
-          return _LazySection(
-            key: _sections[index].key,
-            builder: _sections[index].builder,
-          );
-        },
-      ),
-    );
-  }
-
-  /// Fundo animado com partículas e gradiente radial.
-  Widget _buildAnimatedBackground() {
-    return AnimatedBuilder(
-      animation: _particleAnimation,
-      builder: (context, child) {
-        return Container(
-          height: MediaQuery.of(context).size.height,
-          decoration: BoxDecoration(
-            gradient: RadialGradient(
-              center: Alignment.topRight,
-              radius: 1.5,
-              colors: [
-                CyberpunkColors.burntOrange.withOpacity(0.1),
-                CyberpunkColors.deepBlack,
-                Colors.black87,
-              ],
-              stops: [0.0, 0.6, 1.0],
-            ),
-          ),
-          child: CustomPaint(
-            painter: ParticlesPainter(
-              particles: _particles,
-              animation: _particleAnimation.value,
-              parallaxOffset: _scrollOffset * 0.5,
-            ),
-            size: Size.infinite,
-          ),
-        );
-      },
-    );
-  }
-
-  /// Header com gradiente, título animado, subtítulo e botões de redes sociais.
-  Widget _buildParallaxHeader(bool isWide) {
-    return SizedBox(
-      height: MediaQuery.of(context).size.height * 0.9,
-      child: Stack(
-        children: [
-          // Gradiente de fundo do header
-          Positioned.fill(
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    CyberpunkColors.primaryOrange.withOpacity(0.3),
-                    CyberpunkColors.deepOrange.withOpacity(0.2),
-                    Colors.transparent,
-                  ],
+            slivers: [
+              SliverToBoxAdapter(child: SizedBox(height: isCompact ? 86 : 104)),
+              SliverToBoxAdapter(
+                child: _HeroSection(onOpen: _openLink, isCompact: isCompact),
+              ),
+              SliverToBoxAdapter(
+                child: _PageShell(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _SectionHeader(
+                        key: _granithKey,
+                        eyebrow: 'Produto principal',
+                        title: 'Granith como vitrine de engenharia',
+                        subtitle:
+                            'Um ERP web e um app Android de campo conectados por dados, notificações, mapas, offline-first e IA local.',
+                      ),
+                      const SizedBox(height: 22),
+                      _GranithFeatureGrid(onOpen: _openLink),
+                      const SizedBox(height: 86),
+                      _SectionHeader(
+                        key: _systemKey,
+                        eyebrow: 'Como eu entrego',
+                        title: 'Do problema operacional ao produto em uso',
+                        subtitle:
+                            'A página agora apresenta o trabalho como uma oferta clara: descoberta, arquitetura, implementação, entrega e evolução.',
+                      ),
+                      const SizedBox(height: 22),
+                      const _DeliverySystem(),
+                      const SizedBox(height: 86),
+                      const _MetricStrip(),
+                      const SizedBox(height: 86),
+                      _SectionHeader(
+                        key: _projectsKey,
+                        eyebrow: 'Portfólio',
+                        title: 'Projetos com contexto e impacto',
+                        subtitle:
+                            'Cards mais densos, com tecnologia, papel no projeto e um resumo do que cada entrega resolveu.',
+                      ),
+                      const SizedBox(height: 22),
+                      _ProjectsShowcase(onOpen: _openLink),
+                      const SizedBox(height: 86),
+                      const _ExperienceBlock(),
+                      const SizedBox(height: 86),
+                      const _StackBlock(),
+                      const SizedBox(height: 86),
+                      _ContactBand(key: _contactKey, onOpen: _openLink),
+                      const SizedBox(height: 72),
+                    ],
+                  ),
                 ),
               ),
-            ),
+            ],
           ),
-
-          // Conteúdo centralizado: nome, título, botões
-          Center(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 1120),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    _buildGranithBadge(),
-                    const SizedBox(height: 28),
-                    _buildAnimatedTitle(),
-                    const SizedBox(height: 32),
-                    _buildAnimatedSubtitle(),
-                    const SizedBox(height: 42),
-                    _buildGlowingButtons(),
-                  ],
-                ),
-              ),
-            ),
-          ),
-
-          // Efeito de brilho circular no canto superior direito
           Positioned(
-            top: 50,
-            right: 50,
-            child: AnimatedBuilder(
-              animation: _glowAnimation,
-              builder: (context, child) {
-                return Container(
-                  width: 200,
-                  height: 200,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: RadialGradient(
-                      colors: [
-                        CyberpunkColors.primaryOrange.withOpacity(
-                          _glowAnimation.value * 0.3,
-                        ),
-                        Colors.transparent,
-                      ],
-                    ),
-                  ),
-                );
-              },
+            top: 0,
+            left: 0,
+            right: 0,
+            child: SafeArea(
+              bottom: false,
+              child: _TopNavigation(
+                compact: isCompact,
+                elevated: _scrollOffset > 40,
+                onGranith: () => _scrollTo(_granithKey),
+                onSystem: () => _scrollTo(_systemKey),
+                onProjects: () => _scrollTo(_projectsKey),
+                onContact: () => _scrollTo(_contactKey),
+              ),
             ),
           ),
         ],
@@ -407,816 +144,2262 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     );
   }
 
-  /// Título animado com efeito de escala e gradiente.
-  Widget _buildGranithBadge() {
-    return TweenAnimationBuilder<double>(
-      tween: Tween(begin: 0.0, end: 1.0),
-      duration: const Duration(milliseconds: 1200),
+  Future<void> _scrollTo(GlobalKey key) async {
+    final targetContext = key.currentContext;
+    if (targetContext == null) return;
+    await Scrollable.ensureVisible(
+      targetContext,
+      duration: const Duration(milliseconds: 520),
       curve: Curves.easeOutCubic,
-      builder: (context, value, child) {
-        return Transform.translate(
-          offset: Offset(0, 18 * (1 - value)),
-          child: Opacity(
-            opacity: value,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-              decoration: BoxDecoration(
-                color: CyberpunkColors.charcoalGray.withOpacity(0.82),
-                borderRadius: BorderRadius.circular(999),
-                border: Border.all(
-                  color: CyberpunkColors.primaryOrange.withOpacity(0.35),
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: CyberpunkColors.primaryOrange.withOpacity(0.12),
-                    blurRadius: 18,
-                    spreadRadius: 1,
-                  ),
-                ],
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(9),
-                    child: Image.asset(
-                      'Assets/granith_app_icon.png',
-                      width: 30,
-                      height: 30,
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  const Text(
-                    'Granith Portfolio',
-                    style: TextStyle(
-                      color: CyberpunkColors.terminalGreen,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 0.4,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
-      },
+      alignment: 0.08,
     );
   }
 
-  Widget _buildAnimatedTitle() {
-    return TweenAnimationBuilder<double>(
-      tween: Tween(begin: 0.0, end: 1.0),
-      duration: Duration(milliseconds: 1500),
-      curve: Curves.elasticOut,
-      builder: (context, value, child) {
-        final screenWidth = MediaQuery.of(context).size.width;
-        final isMobile = screenWidth < 600;
-        final isTablet = screenWidth >= 600 && screenWidth < 1024;
-
-        // Define o tamanho da fonte baseado no dispositivo
-        double fontSize;
-        if (isMobile) {
-          fontSize = 28;
-        } else if (isTablet) {
-          fontSize = 48;
-        } else {
-          fontSize = 64;
-        }
-
-        return Transform.scale(
-          scale: value,
-          child: Center(
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
-              child: ShaderMask(
-                shaderCallback: (bounds) {
-                  return LinearGradient(
-                    colors: [
-                      CyberpunkColors.primaryOrange,
-                      CyberpunkColors.glowYellow,
-                      CyberpunkColors.primaryOrange,
-                    ],
-                    stops: [0.0, 0.5, 1.0],
-                  ).createShader(bounds);
-                },
-                child: Text(
-                  profile.fullName,
-                  textAlign: TextAlign.center,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: fontSize,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                    letterSpacing: isMobile ? 1.0 : 2.0,
-                    shadows: [
-                      Shadow(
-                        offset: Offset(0, 0),
-                        blurRadius: isMobile ? 15 : 20,
-                        color: CyberpunkColors.primaryOrange.withOpacity(0.8),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  /// Subtítulo animado com efeito de translação e opacidade.
-  Widget _buildAnimatedSubtitle() {
-    return TweenAnimationBuilder<double>(
-      tween: Tween(begin: 0.0, end: 1.0),
-      duration: Duration(milliseconds: 2000),
-      curve: Curves.easeOut,
-      builder: (context, value, child) {
-        final screenWidth = MediaQuery.of(context).size.width;
-        final isMobile = screenWidth < 600;
-        final isTablet = screenWidth >= 600 && screenWidth < 1024;
-
-        double fontSize;
-        double horizontalPadding;
-        double verticalPadding;
-
-        if (isMobile) {
-          fontSize = 16;
-          horizontalPadding = 16;
-          verticalPadding = 8;
-        } else if (isTablet) {
-          fontSize = 20;
-          horizontalPadding = 20;
-          verticalPadding = 10;
-        } else {
-          fontSize = 24;
-          horizontalPadding = 24;
-          verticalPadding = 12;
-        }
-
-        return Transform.translate(
-          offset: Offset(0, (isMobile ? 30 : 50) * (1 - value)),
-          child: Opacity(
-            opacity: value,
-            child: Center(
-              child: FittedBox(
-                fit: BoxFit.scaleDown,
-                child: Container(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: horizontalPadding,
-                    vertical: verticalPadding,
-                  ),
-                  margin: EdgeInsets.symmetric(horizontal: isMobile ? 16 : 0),
-                  decoration: BoxDecoration(
-                    border: Border.all(
-                      color: CyberpunkColors.primaryOrange.withOpacity(0.5),
-                      width: isMobile ? 1.5 : 2,
-                    ),
-                    borderRadius: BorderRadius.circular(isMobile ? 6 : 8),
-                    boxShadow: [
-                      BoxShadow(
-                        color: CyberpunkColors.primaryOrange.withOpacity(0.3),
-                        blurRadius: isMobile ? 10 : 15,
-                        spreadRadius: isMobile ? 1 : 2,
-                      ),
-                    ],
-                  ),
-                  child: Text(
-                    profile.title,
-                    textAlign: TextAlign.center,
-                    maxLines: isMobile ? 2 : 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: fontSize,
-                      color: CyberpunkColors.terminalGreen,
-                      letterSpacing: isMobile ? 1.0 : 1.5,
-                      height: isMobile ? 1.3 : 1.0,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  /// Botões animados para GitHub e LinkedIn.
-  Widget _buildGlowingButtons() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8),
-      child: Wrap(
-        alignment: WrapAlignment.center,
-        spacing: 16,
-        runSpacing: 14,
-        children: [
-          _buildGlowingButton(
-            'GitHub',
-            Icons.code,
-            () => _openLink(profile.github),
-          ),
-          _buildGlowingButton(
-            'LinkedIn',
-            Icons.link,
-            () => _openLink(profile.linkedin),
-          ),
-          _buildGlowingButton(
-            'ERP Web',
-            Icons.dashboard_customize_outlined,
-            () => _openLink(GranithLinks.erp),
-          ),
-          _buildGlowingButton(
-            'Mobile',
-            Icons.phone_android_outlined,
-            () => _openLink(GranithLinks.mobile),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// Botão com efeito de brilho animado.
-  Widget _buildGlowingButton(
-    String text,
-    IconData icon,
-    VoidCallback onPressed,
-  ) {
-    return TweenAnimationBuilder<double>(
-      tween: Tween(begin: 0.0, end: 1.0),
-      duration: Duration(milliseconds: 2500),
-      curve: Curves.bounceOut,
-      builder: (context, value, child) {
-        return Transform.scale(
-          scale: value,
-          child: MouseRegion(
-            onEnter: (_) => HapticFeedback.selectionClick(),
-            child: AnimatedBuilder(
-              animation: _glowAnimation,
-              builder: (context, child) {
-                return Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(30),
-                    boxShadow: [
-                      BoxShadow(
-                        color: CyberpunkColors.primaryOrange.withOpacity(
-                          _glowAnimation.value * 0.6,
-                        ),
-                        blurRadius: 20,
-                        spreadRadius: _glowAnimation.value * 5,
-                      ),
-                    ],
-                  ),
-                  child: ElevatedButton.icon(
-                    onPressed: onPressed,
-                    icon: Icon(icon),
-                    label: Text(text),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: CyberpunkColors.charcoalGray,
-                      foregroundColor: CyberpunkColors.primaryOrange,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 32,
-                        vertical: 16,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(30),
-                        side: BorderSide(
-                          color: CyberpunkColors.primaryOrange.withOpacity(0.8),
-                          width: 2,
-                        ),
-                      ),
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  /// Seção animada com título e conteúdo - espaçamento otimizado.
-  Widget _buildAnimatedSection(String title, Widget content, double delay) {
-    return TweenAnimationBuilder<double>(
-      tween: Tween(begin: 0.0, end: 1.0),
-      duration: Duration(milliseconds: 1000 + delay.toInt()),
-      curve: Curves.easeOutCubic,
-      builder: (context, value, child) {
-        return Transform.translate(
-          offset: Offset(0, 100 * (1 - value)),
-          child: Opacity(
-            opacity: value,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildSectionTitle(title),
-                const SizedBox(height: 20), // Espaço entre título e conteúdo
-                content,
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  /// Título de seção com barra lateral animada e gradiente.
-  Widget _buildSectionTitle(String title) {
-    return Container(
-      child: Row(
-        children: [
-          AnimatedBuilder(
-            animation: _glowAnimation,
-            builder: (context, child) {
-              final screenWidth = MediaQuery.of(context).size.width;
-              final isMobile = screenWidth < 600;
-
-              return Container(
-                width: isMobile ? 6 : 8,
-                height: isMobile ? 24 : 32,
-                decoration: BoxDecoration(
-                  color: CyberpunkColors.primaryOrange,
-                  borderRadius: BorderRadius.circular(isMobile ? 3 : 4),
-                  boxShadow: [
-                    BoxShadow(
-                      color: CyberpunkColors.primaryOrange.withOpacity(
-                        _glowAnimation.value,
-                      ),
-                      blurRadius: isMobile ? 8 : 10,
-                      spreadRadius: isMobile ? 1 : 2,
-                    ),
-                  ],
-                ),
-              );
-            },
-          ),
-          SizedBox(width: MediaQuery.of(context).size.width < 600 ? 12 : 16),
-          Expanded(
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
-              alignment: Alignment.centerLeft,
-              child: ShaderMask(
-                shaderCallback: (bounds) {
-                  return LinearGradient(
-                    colors: [
-                      CyberpunkColors.primaryOrange,
-                      CyberpunkColors.glowYellow,
-                    ],
-                  ).createShader(bounds);
-                },
-                child: Builder(
-                  builder: (context) {
-                    final screenWidth = MediaQuery.of(context).size.width;
-                    final isMobile = screenWidth < 600;
-                    final isTablet = screenWidth >= 600 && screenWidth < 1024;
-
-                    double fontSize;
-                    if (isMobile) {
-                      fontSize = 20;
-                    } else if (isTablet) {
-                      fontSize = 24;
-                    } else {
-                      fontSize = 28;
-                    }
-
-                    return Text(
-                      title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: fontSize,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                        letterSpacing: isMobile ? 0.8 : 1.2,
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// Seção "Sobre mim" com descrição.
-  Widget _buildAboutSection() {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final isMobile = screenWidth < 600;
-
-    return Container(
-      padding: EdgeInsets.all(isMobile ? 20 : 24),
-      decoration: BoxDecoration(
-        color: CyberpunkColors.charcoalGray.withOpacity(0.8),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: CyberpunkColors.primaryOrange.withOpacity(0.3),
-          width: 1,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: CyberpunkColors.primaryOrange.withOpacity(0.1),
-            blurRadius: 20,
-            spreadRadius: 5,
-          ),
-        ],
-      ),
-      child: Text(
-        professionalSummary,
-        style: TextStyle(
-          fontSize: isMobile ? 16 : 18,
-          color: CyberpunkColors.terminalGreen,
-          height: 1.6,
-          letterSpacing: 0.5,
-        ),
-      ),
-    );
-  }
-
-  /// Seção de projetos: grid no desktop/tablet, lista centralizada no mobile.
-  Widget _buildProjectsSection(bool isWide) {
-    final double cardWidth = isWide ? 320 : 340;
-
-    if (isWide) {
-      // Desktop/tablet: grid responsivo com animação individual
-      return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8.0),
-        child: Wrap(
-          spacing: 16,
-          runSpacing: 20,
-          alignment: WrapAlignment.center, // Centraliza os cards
-          children:
-              projects.asMap().entries.map((entry) {
-                final index = entry.key;
-                final project = entry.value;
-
-                return SizedBox(
-                  width: cardWidth,
-                  child: ProjectCard(
-                    project: project,
-                    width: cardWidth,
-                    index: index, // Passa o índice para delay escalonado
-                  ),
-                );
-              }).toList(),
-        ),
-      );
-    } else {
-      // Mobile: lista centralizada com animação individual
-      return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8.0),
-        child: ListView.separated(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: projects.length,
-          separatorBuilder: (context, index) => const SizedBox(height: 20),
-          itemBuilder: (context, index) {
-            final project = projects[index];
-
-            return Align(
-              alignment: Alignment.center,
-              child: ProjectCard(
-                project: project,
-                width: cardWidth,
-                index: index, // Passa o índice para delay escalonado
-              ),
-            );
-          },
-        ),
-      );
-    }
-  }
-
-  /// Overlay de névoa animada para efeito visual.
-  Widget _buildMistOverlay() {
-    return IgnorePointer(
-      child: AnimatedBuilder(
-        animation: _glowAnimation,
-        builder: (context, child) {
-          return Container(
-            height: MediaQuery.of(context).size.height,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  Colors.black.withOpacity(0.1 + _glowAnimation.value * 0.05),
-                  Colors.transparent,
-                  Colors.transparent,
-                  Colors.black.withOpacity(0.2),
-                ],
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  /// Abre um link externo (GitHub, LinkedIn, etc).
-  void _openLink(String url) async {
-    HapticFeedback.lightImpact();
-    final uri = Uri.parse(url);
+  Future<void> _openLink(String url) async {
+    final uri = Uri.tryParse(url);
+    if (uri == null) return;
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     }
   }
 }
 
-/// Classe para representar partículas do fundo animado.
-class Particle {
-  double x;
-  double y;
-  final double speed;
-  final double size;
-  final double opacity;
+class _TopNavigation extends StatelessWidget {
+  final bool compact;
+  final bool elevated;
+  final VoidCallback onGranith;
+  final VoidCallback onSystem;
+  final VoidCallback onProjects;
+  final VoidCallback onContact;
 
-  Particle({
-    required this.x,
-    required this.y,
-    required this.speed,
-    required this.size,
-    required this.opacity,
+  const _TopNavigation({
+    required this.compact,
+    required this.elevated,
+    required this.onGranith,
+    required this.onSystem,
+    required this.onProjects,
+    required this.onContact,
   });
 
-  /// Atualiza a posição da partícula (movimento para cima).
-  void update() {
-    y -= speed;
-    if (y < 0) {
-      y = 1.0;
-      x = math.Random().nextDouble();
-    }
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.fromLTRB(compact ? 14 : 28, 12, compact ? 14 : 28, 0),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(8),
+        child: BackdropFilter(
+          filter: ui.ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+          child: AnimatedContainer(
+            width: double.infinity,
+            duration: const Duration(milliseconds: 220),
+            padding: EdgeInsets.symmetric(
+              horizontal: compact ? 12 : 18,
+              vertical: compact ? 10 : 12,
+            ),
+            decoration: BoxDecoration(
+              color: CyberpunkColors.deepBlack.withValues(
+                alpha: elevated ? 0.82 : 0.58,
+              ),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color:
+                    elevated
+                        ? CyberpunkColors.primaryOrange.withValues(alpha: 0.34)
+                        : Colors.white.withValues(alpha: 0.08),
+              ),
+              boxShadow: [
+                if (elevated)
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.38),
+                    blurRadius: 24,
+                    offset: const Offset(0, 12),
+                  ),
+              ],
+            ),
+            child: Row(
+              children: [
+                _BrandMark(compact: compact),
+                const Spacer(),
+                if (!compact) ...[
+                  _NavItem(label: 'Granith', onTap: onGranith),
+                  _NavItem(label: 'Sistema', onTap: onSystem),
+                  _NavItem(label: 'Projetos', onTap: onProjects),
+                  const SizedBox(width: 8),
+                ],
+                _PrimaryNavButton(
+                  label: compact ? 'Contato' : 'Falar comigo',
+                  icon: Icons.arrow_outward,
+                  onTap: onContact,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }
 
-/// CustomPainter para desenhar partículas animadas e linhas de conexão.
-class ParticlesPainter extends CustomPainter {
-  final List<Particle> particles;
-  final double animation;
-  final double parallaxOffset;
+class _BrandMark extends StatelessWidget {
+  final bool compact;
 
-  ParticlesPainter({
-    required this.particles,
-    required this.animation,
-    required this.parallaxOffset,
+  const _BrandMark({required this.compact});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: Image.asset(
+            'Assets/granith_app_icon.png',
+            width: compact ? 36 : 42,
+            height: compact ? 36 : 42,
+            fit: BoxFit.cover,
+          ),
+        ),
+        if (!compact) ...[
+          const SizedBox(width: 12),
+          const Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Skyforge',
+                style: TextStyle(
+                  color: CyberpunkColors.terminalGreen,
+                  fontWeight: FontWeight.w900,
+                  fontSize: 16,
+                ),
+              ),
+              SizedBox(height: 2),
+              Text(
+                'Portfólio Granith',
+                style: TextStyle(
+                  color: Colors.white54,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 11,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _NavItem extends StatefulWidget {
+  final String label;
+  final VoidCallback onTap;
+
+  const _NavItem({required this.label, required this.onTap});
+
+  @override
+  State<_NavItem> createState() => _NavItemState();
+}
+
+class _NavItemState extends State<_NavItem> {
+  bool _hovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          margin: const EdgeInsets.symmetric(horizontal: 4),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+          decoration: BoxDecoration(
+            color:
+                _hovered
+                    ? CyberpunkColors.primaryOrange.withValues(alpha: 0.12)
+                    : Colors.transparent,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color:
+                  _hovered
+                      ? CyberpunkColors.primaryOrange.withValues(alpha: 0.42)
+                      : Colors.transparent,
+            ),
+          ),
+          child: Text(
+            widget.label,
+            style: TextStyle(
+              color:
+                  _hovered
+                      ? CyberpunkColors.glowYellow
+                      : CyberpunkColors.terminalGreen.withValues(alpha: 0.78),
+              fontWeight: FontWeight.w700,
+              fontSize: 13,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _PrimaryNavButton extends StatefulWidget {
+  final String label;
+  final IconData icon;
+  final VoidCallback onTap;
+
+  const _PrimaryNavButton({
+    required this.label,
+    required this.icon,
+    required this.onTap,
+  });
+
+  @override
+  State<_PrimaryNavButton> createState() => _PrimaryNavButtonState();
+}
+
+class _PrimaryNavButtonState extends State<_PrimaryNavButton> {
+  bool _hovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 190),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          decoration: BoxDecoration(
+            color:
+                _hovered
+                    ? CyberpunkColors.glowYellow
+                    : CyberpunkColors.primaryOrange,
+            borderRadius: BorderRadius.circular(8),
+            boxShadow: [
+              BoxShadow(
+                color: CyberpunkColors.primaryOrange.withValues(
+                  alpha: _hovered ? 0.36 : 0.18,
+                ),
+                blurRadius: _hovered ? 24 : 12,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                widget.label,
+                style: const TextStyle(
+                  color: CyberpunkColors.deepBlack,
+                  fontWeight: FontWeight.w900,
+                  fontSize: 13,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Icon(widget.icon, color: CyberpunkColors.deepBlack, size: 18),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _HeroSection extends StatelessWidget {
+  final bool isCompact;
+  final void Function(String url) onOpen;
+
+  const _HeroSection({required this.onOpen, required this.isCompact});
+
+  @override
+  Widget build(BuildContext context) {
+    final width = MediaQuery.sizeOf(context).width;
+    final isWide = width >= 1000;
+
+    return _PageShell(
+      child: ConstrainedBox(
+        constraints: BoxConstraints(minHeight: isCompact ? 700 : 760),
+        child: Column(
+          children: [
+            if (isWide)
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Expanded(flex: 11, child: _HeroCopy(onOpen: onOpen)),
+                  const SizedBox(width: 38),
+                  const Expanded(flex: 10, child: _ProductPreview()),
+                ],
+              )
+            else ...[
+              _HeroCopy(onOpen: onOpen),
+              const SizedBox(height: 28),
+              const _ProductPreview(),
+            ],
+            const SizedBox(height: 34),
+            const _HeroMarquee(),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _HeroCopy extends StatelessWidget {
+  final void Function(String url) onOpen;
+
+  const _HeroCopy({required this.onOpen});
+
+  @override
+  Widget build(BuildContext context) {
+    final width = MediaQuery.sizeOf(context).width;
+    final isCompact = width < 760;
+    final titleSize = isCompact ? 42.0 : 74.0;
+
+    return SizedBox(
+      width: double.infinity,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const _Eyebrow(label: 'Flutter Web + Android + Supabase'),
+          const SizedBox(height: 22),
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 760),
+            child: Text(
+              'Projetos que parecem produto, não apenas repositório.',
+              softWrap: true,
+              style: TextStyle(
+                color: CyberpunkColors.terminalGreen,
+                fontSize: titleSize,
+                height: 0.98,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+          ),
+          const SizedBox(height: 22),
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 720),
+            child: Text(
+              professionalSummary,
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.68),
+                fontSize: isCompact ? 15.5 : 18,
+                height: 1.62,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+          const SizedBox(height: 30),
+          Wrap(
+            spacing: 12,
+            runSpacing: 12,
+            children: [
+              _ActionButton(
+                label: 'Ver Granith ERP',
+                icon: Icons.dashboard_customize_outlined,
+                filled: true,
+                onTap: () => onOpen('https://github.com/DEV-W-NK/Granith-ERP'),
+              ),
+              _ActionButton(
+                label: 'Ver Mobile',
+                icon: Icons.phone_android_outlined,
+                onTap:
+                    () => onOpen('https://github.com/DEV-W-NK/Granith-Mobile'),
+              ),
+              _ActionButton(
+                label: 'GitHub',
+                icon: Icons.code,
+                onTap: () => onOpen(profile.github),
+              ),
+            ],
+          ),
+          const SizedBox(height: 34),
+          const _HeroStats(),
+        ],
+      ),
+    );
+  }
+}
+
+class _HeroStats extends StatelessWidget {
+  const _HeroStats();
+
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(
+      spacing: 10,
+      runSpacing: 10,
+      children: const [
+        _StatTile(value: '2', label: 'apps Granith integrados'),
+        _StatTile(value: '100%', label: 'foco em operação real'),
+        _StatTile(value: 'PWA', label: 'portfólio web publicado'),
+      ],
+    );
+  }
+}
+
+class _StatTile extends StatelessWidget {
+  final String value;
+  final String label;
+
+  const _StatTile({required this.value, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 190,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: CyberpunkColors.charcoalGray.withValues(alpha: 0.74),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            value,
+            style: const TextStyle(
+              color: CyberpunkColors.primaryOrange,
+              fontSize: 25,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(height: 5),
+          Text(
+            label,
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.62),
+              fontWeight: FontWeight.w600,
+              fontSize: 12.5,
+              height: 1.25,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ProductPreview extends StatefulWidget {
+  const _ProductPreview();
+
+  @override
+  State<_ProductPreview> createState() => _ProductPreviewState();
+}
+
+class _ProductPreviewState extends State<_ProductPreview>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 5),
+    )..repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, _) {
+        final glow = 0.08 + (_controller.value * 0.08);
+        return Container(
+          width: double.infinity,
+          constraints: const BoxConstraints(maxWidth: 620),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: CyberpunkColors.primaryOrange.withValues(
+                alpha: 0.35 + glow,
+              ),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: CyberpunkColors.primaryOrange.withValues(alpha: glow),
+                blurRadius: 34,
+                offset: const Offset(0, 18),
+              ),
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.48),
+                blurRadius: 34,
+                offset: const Offset(0, 26),
+              ),
+            ],
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                CyberpunkColors.darkGray.withValues(alpha: 0.95),
+                CyberpunkColors.charcoalGray.withValues(alpha: 0.94),
+                CyberpunkColors.deepBlack.withValues(alpha: 0.98),
+              ],
+            ),
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: Stack(
+              children: [
+                Positioned.fill(
+                  child: CustomPaint(
+                    painter: _PanelLinesPainter(progress: _controller.value),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(18),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: Image.asset(
+                              'Assets/granith_app_icon.png',
+                              width: 48,
+                              height: 48,
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: Image.asset(
+                              'Assets/granith_logo_wordmark.png',
+                              height: 42,
+                              alignment: Alignment.centerLeft,
+                              fit: BoxFit.contain,
+                            ),
+                          ),
+                          const _StatusChip(label: 'Online'),
+                        ],
+                      ),
+                      const SizedBox(height: 22),
+                      LayoutBuilder(
+                        builder: (context, constraints) {
+                          final compact = constraints.maxWidth < 500;
+                          return compact
+                              ? const Column(
+                                children: [
+                                  _DashboardMock(),
+                                  SizedBox(height: 14),
+                                  _PhoneMock(),
+                                ],
+                              )
+                              : const Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Expanded(flex: 7, child: _DashboardMock()),
+                                  SizedBox(width: 14),
+                                  Expanded(flex: 4, child: _PhoneMock()),
+                                ],
+                              );
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _DashboardMock extends StatelessWidget {
+  const _DashboardMock();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: CyberpunkColors.deepBlack.withValues(alpha: 0.58),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const _TinyIcon(icon: Icons.area_chart_outlined),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  'ERP operacional',
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.88),
+                    fontWeight: FontWeight.w900,
+                    fontSize: 15,
+                  ),
+                ),
+              ),
+              const _StatusChip(label: 'CI/CD'),
+            ],
+          ),
+          const SizedBox(height: 16),
+          const Row(
+            children: [
+              Expanded(child: _MiniMetric(label: 'Rotas', value: 'GPS')),
+              SizedBox(width: 10),
+              Expanded(child: _MiniMetric(label: 'Obras', value: 'RLS')),
+            ],
+          ),
+          const SizedBox(height: 14),
+          const _ProgressLine(label: 'Compras e requisicoes', percent: 0.84),
+          const SizedBox(height: 10),
+          const _ProgressLine(label: 'Estoque e financeiro', percent: 0.72),
+          const SizedBox(height: 10),
+          const _ProgressLine(label: 'Mobile sync', percent: 0.91),
+        ],
+      ),
+    );
+  }
+}
+
+class _PhoneMock extends StatelessWidget {
+  const _PhoneMock();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFF06090A),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: CyberpunkColors.primaryOrange.withValues(alpha: 0.28),
+        ),
+      ),
+      child: Column(
+        children: [
+          Container(
+            height: 5,
+            width: 52,
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.20),
+              borderRadius: BorderRadius.circular(6),
+            ),
+          ),
+          const SizedBox(height: 14),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: Image.asset(
+              'Assets/granith_app_icon.png',
+              width: 56,
+              height: 56,
+              fit: BoxFit.cover,
+            ),
+          ),
+          const SizedBox(height: 14),
+          const _PhoneRouteLine(title: 'Minha rota hoje', value: '12 km'),
+          const _PhoneRouteLine(title: 'Cerca ativa', value: 'OK'),
+          const _PhoneRouteLine(title: 'Offline queue', value: '0'),
+          const SizedBox(height: 10),
+          Container(
+            height: 38,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: CyberpunkColors.screenTeal,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: const Text(
+              'Sincronizado',
+              style: TextStyle(
+                color: CyberpunkColors.deepBlack,
+                fontWeight: FontWeight.w900,
+                fontSize: 12,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PhoneRouteLine extends StatelessWidget {
+  final String title;
+  final String value;
+
+  const _PhoneRouteLine({required this.title, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 9),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              title,
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.58),
+                fontSize: 11.5,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+          Text(
+            value,
+            style: const TextStyle(
+              color: CyberpunkColors.primaryOrange,
+              fontSize: 12,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MiniMetric extends StatelessWidget {
+  final String label;
+  final String value;
+
+  const _MiniMetric({required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: CyberpunkColors.primaryOrange.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: CyberpunkColors.primaryOrange.withValues(alpha: 0.18),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.54),
+              fontWeight: FontWeight.w700,
+              fontSize: 11,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: const TextStyle(
+              color: CyberpunkColors.terminalGreen,
+              fontWeight: FontWeight.w900,
+              fontSize: 16,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ProgressLine extends StatelessWidget {
+  final String label;
+  final double percent;
+
+  const _ProgressLine({required this.label, required this.percent});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            color: Colors.white.withValues(alpha: 0.62),
+            fontWeight: FontWeight.w700,
+            fontSize: 12,
+          ),
+        ),
+        const SizedBox(height: 7),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: LinearProgressIndicator(
+            value: percent,
+            minHeight: 7,
+            backgroundColor: Colors.white.withValues(alpha: 0.08),
+            valueColor: const AlwaysStoppedAnimation(
+              CyberpunkColors.primaryOrange,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _HeroMarquee extends StatelessWidget {
+  const _HeroMarquee();
+
+  @override
+  Widget build(BuildContext context) {
+    const items = [
+      'Flutter Web',
+      'Android',
+      'Supabase',
+      'PostgreSQL',
+      'Firebase Cloud Messaging',
+      'Google Maps',
+      'SQLite',
+      'Offline-first',
+      'IA local',
+      'CI/CD',
+    ];
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      decoration: BoxDecoration(
+        border: Border.symmetric(
+          horizontal: BorderSide(color: Colors.white.withValues(alpha: 0.08)),
+        ),
+      ),
+      child: Wrap(
+        alignment: WrapAlignment.center,
+        spacing: 10,
+        runSpacing: 10,
+        children: items.map((item) => _TechBadge(label: item)).toList(),
+      ),
+    );
+  }
+}
+
+class _GranithFeatureGrid extends StatelessWidget {
+  final void Function(String url) onOpen;
+
+  const _GranithFeatureGrid({required this.onOpen});
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isWide = constraints.maxWidth >= 920;
+        final erp = projects[0];
+        final mobile = projects[1];
+
+        final cards = [
+          _FeatureProjectCard(
+            project: erp,
+            label: 'ERP Web',
+            icon: Icons.desktop_windows_outlined,
+            accent: CyberpunkColors.primaryOrange,
+            onOpen: onOpen,
+          ),
+          _FeatureProjectCard(
+            project: mobile,
+            label: 'Android Field App',
+            icon: Icons.phone_android_outlined,
+            accent: CyberpunkColors.screenTeal,
+            onOpen: onOpen,
+          ),
+        ];
+
+        if (isWide) {
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(child: cards[0]),
+              const SizedBox(width: 18),
+              Expanded(child: cards[1]),
+            ],
+          );
+        }
+
+        return Column(
+          children: [cards[0], const SizedBox(height: 16), cards[1]],
+        );
+      },
+    );
+  }
+}
+
+class _FeatureProjectCard extends StatefulWidget {
+  final Project project;
+  final String label;
+  final IconData icon;
+  final Color accent;
+  final void Function(String url) onOpen;
+
+  const _FeatureProjectCard({
+    required this.project,
+    required this.label,
+    required this.icon,
+    required this.accent,
+    required this.onOpen,
+  });
+
+  @override
+  State<_FeatureProjectCard> createState() => _FeatureProjectCardState();
+}
+
+class _FeatureProjectCardState extends State<_FeatureProjectCard> {
+  bool _hovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      child: AnimatedScale(
+        scale: _hovered ? 1.012 : 1,
+        duration: const Duration(milliseconds: 180),
+        curve: Curves.easeOutCubic,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 220),
+          padding: const EdgeInsets.all(22),
+          decoration: _cardDecoration(
+            border:
+                _hovered
+                    ? widget.accent.withValues(alpha: 0.72)
+                    : widget.accent.withValues(alpha: 0.30),
+            glow: widget.accent.withValues(alpha: _hovered ? 0.16 : 0.06),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  _IconBox(icon: widget.icon, color: widget.accent),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      widget.label,
+                      style: TextStyle(
+                        color: widget.accent,
+                        fontWeight: FontWeight.w900,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ),
+                  _StatusChip(label: 'Repositório'),
+                ],
+              ),
+              const SizedBox(height: 20),
+              Text(
+                widget.project.title,
+                style: const TextStyle(
+                  color: CyberpunkColors.terminalGreen,
+                  fontSize: 26,
+                  fontWeight: FontWeight.w900,
+                  height: 1.08,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                widget.project.subtitle,
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.68),
+                  fontSize: 15,
+                  height: 1.5,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 18),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children:
+                    widget.project.tech
+                        .map(
+                          (tech) =>
+                              _TechBadge(label: tech, color: widget.accent),
+                        )
+                        .toList(),
+              ),
+              const SizedBox(height: 22),
+              ...widget.project.bullets!
+                  .take(3)
+                  .map(
+                    (bullet) => _BulletLine(text: bullet, color: widget.accent),
+                  ),
+              const SizedBox(height: 18),
+              if (widget.project.url != null && widget.project.url!.isNotEmpty)
+                _ActionButton(
+                  label: 'Abrir repositório',
+                  icon: Icons.arrow_outward,
+                  filled: true,
+                  color: widget.accent,
+                  onTap: () => widget.onOpen(widget.project.url!),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _DeliverySystem extends StatelessWidget {
+  const _DeliverySystem();
+
+  @override
+  Widget build(BuildContext context) {
+    const steps = [
+      _ProcessStep(
+        title: 'Mapeio o processo',
+        body:
+            'Transformo regra operacional em fluxo navegavel, com estados claros e telas objetivas.',
+        icon: Icons.account_tree_outlined,
+      ),
+      _ProcessStep(
+        title: 'Desenho a base',
+        body:
+            'Estruturo dados, RLS, migrations, serviços, sync e contratos entre web, mobile e banco.',
+        icon: Icons.schema_outlined,
+      ),
+      _ProcessStep(
+        title: 'Entrega no campo',
+        body:
+            'Levo rotas, geofence, evidências, ponto, notificações e cache offline para o Android.',
+        icon: Icons.map_outlined,
+      ),
+      _ProcessStep(
+        title: 'Fecho com dados',
+        body:
+            'Crio dashboards, relatórios, custos, DRE, compras e visão executiva para decisão.',
+        icon: Icons.analytics_outlined,
+      ),
+    ];
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isWide = constraints.maxWidth >= 960;
+        return isWide
+            ? Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                for (var i = 0; i < steps.length; i++) ...[
+                  Expanded(child: _ProcessCard(step: steps[i], index: i)),
+                  if (i < steps.length - 1) const SizedBox(width: 14),
+                ],
+              ],
+            )
+            : Column(
+              children: [
+                for (var i = 0; i < steps.length; i++) ...[
+                  _ProcessCard(step: steps[i], index: i),
+                  if (i < steps.length - 1) const SizedBox(height: 14),
+                ],
+              ],
+            );
+      },
+    );
+  }
+}
+
+class _ProcessStep {
+  final String title;
+  final String body;
+  final IconData icon;
+
+  const _ProcessStep({
+    required this.title,
+    required this.body,
+    required this.icon,
+  });
+}
+
+class _ProcessCard extends StatefulWidget {
+  final _ProcessStep step;
+  final int index;
+
+  const _ProcessCard({required this.step, required this.index});
+
+  @override
+  State<_ProcessCard> createState() => _ProcessCardState();
+}
+
+class _ProcessCardState extends State<_ProcessCard> {
+  bool _hovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      cursor: SystemMouseCursors.basic,
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 220),
+        padding: const EdgeInsets.all(18),
+        decoration: _cardDecoration(
+          border:
+              _hovered
+                  ? CyberpunkColors.primaryOrange.withValues(alpha: 0.56)
+                  : Colors.white.withValues(alpha: 0.08),
+          glow: CyberpunkColors.primaryOrange.withValues(
+            alpha: _hovered ? 0.14 : 0.03,
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                _IconBox(
+                  icon: widget.step.icon,
+                  color: CyberpunkColors.primaryOrange,
+                ),
+                const Spacer(),
+                Text(
+                  '0${widget.index + 1}',
+                  style: TextStyle(
+                    color: CyberpunkColors.primaryOrange.withValues(
+                      alpha: 0.42,
+                    ),
+                    fontSize: 28,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 18),
+            Text(
+              widget.step.title,
+              style: const TextStyle(
+                color: CyberpunkColors.terminalGreen,
+                fontSize: 18,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              widget.step.body,
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.62),
+                height: 1.48,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _MetricStrip extends StatelessWidget {
+  const _MetricStrip();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(22),
+      decoration: BoxDecoration(
+        color: CyberpunkColors.primaryOrange.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: CyberpunkColors.primaryOrange.withValues(alpha: 0.24),
+        ),
+      ),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final isWide = constraints.maxWidth >= 900;
+          final left = Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const _Eyebrow(label: 'Impacto demonstravel'),
+              const SizedBox(height: 12),
+              const Text(
+                'A vitrine agora mostra engenharia de produto, não uma lista solta de tecnologias.',
+                style: TextStyle(
+                  color: CyberpunkColors.terminalGreen,
+                  fontWeight: FontWeight.w900,
+                  fontSize: 28,
+                  height: 1.12,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'O foco visual foi trazer a pegada de marketplace: proposta clara, previews, repositórios destacados e cards que vendem o valor do trabalho.',
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.68),
+                  height: 1.55,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          );
+          final right = Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            children: const [
+              _ValueBox(value: 'ERP', label: 'web completo'),
+              _ValueBox(value: 'App', label: 'Android de campo'),
+              _ValueBox(value: 'FCM', label: 'notificações'),
+              _ValueBox(value: 'Maps', label: 'rotas e geofence'),
+            ],
+          );
+
+          return isWide
+              ? Row(
+                children: [
+                  Expanded(flex: 7, child: left),
+                  const SizedBox(width: 24),
+                  Expanded(flex: 5, child: right),
+                ],
+              )
+              : Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [left, const SizedBox(height: 22), right],
+              );
+        },
+      ),
+    );
+  }
+}
+
+class _ValueBox extends StatelessWidget {
+  final String value;
+  final String label;
+
+  const _ValueBox({required this.value, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 145,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: CyberpunkColors.deepBlack.withValues(alpha: 0.62),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            value,
+            style: const TextStyle(
+              color: CyberpunkColors.primaryOrange,
+              fontSize: 24,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            label,
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.62),
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ProjectsShowcase extends StatelessWidget {
+  final void Function(String url) onOpen;
+
+  const _ProjectsShowcase({required this.onOpen});
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final columns =
+            constraints.maxWidth >= 1150
+                ? 3
+                : constraints.maxWidth >= 760
+                ? 2
+                : 1;
+        final gap = 14.0;
+        final cardWidth =
+            (constraints.maxWidth - (gap * (columns - 1))) / columns;
+
+        return Wrap(
+          spacing: gap,
+          runSpacing: gap,
+          children:
+              projects
+                  .map(
+                    (project) => SizedBox(
+                      width: cardWidth,
+                      child: _CompactProjectCard(
+                        project: project,
+                        onOpen: onOpen,
+                      ),
+                    ),
+                  )
+                  .toList(),
+        );
+      },
+    );
+  }
+}
+
+class _CompactProjectCard extends StatefulWidget {
+  final Project project;
+  final void Function(String url) onOpen;
+
+  const _CompactProjectCard({required this.project, required this.onOpen});
+
+  @override
+  State<_CompactProjectCard> createState() => _CompactProjectCardState();
+}
+
+class _CompactProjectCardState extends State<_CompactProjectCard> {
+  bool _hovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final hasUrl = widget.project.url != null && widget.project.url!.isNotEmpty;
+
+    return MouseRegion(
+      cursor: hasUrl ? SystemMouseCursors.click : SystemMouseCursors.basic,
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      child: GestureDetector(
+        onTap: hasUrl ? () => widget.onOpen(widget.project.url!) : null,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 210),
+          constraints: const BoxConstraints(minHeight: 318),
+          padding: const EdgeInsets.all(18),
+          decoration: _cardDecoration(
+            border:
+                _hovered
+                    ? CyberpunkColors.screenTeal.withValues(alpha: 0.58)
+                    : Colors.white.withValues(alpha: 0.08),
+            glow: CyberpunkColors.screenTeal.withValues(
+              alpha: _hovered ? 0.12 : 0.02,
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  _IconBox(
+                    icon: _iconForProject(widget.project),
+                    color: CyberpunkColors.screenTeal,
+                  ),
+                  const Spacer(),
+                  if (hasUrl)
+                    Icon(
+                      Icons.arrow_outward,
+                      color:
+                          _hovered
+                              ? CyberpunkColors.screenTeal
+                              : Colors.white38,
+                      size: 20,
+                    ),
+                ],
+              ),
+              const SizedBox(height: 18),
+              Text(
+                widget.project.title,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: CyberpunkColors.terminalGreen,
+                  fontWeight: FontWeight.w900,
+                  fontSize: 19,
+                  height: 1.16,
+                ),
+              ),
+              const SizedBox(height: 9),
+              Text(
+                widget.project.subtitle,
+                maxLines: 3,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.62),
+                  height: 1.42,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 15),
+              Wrap(
+                spacing: 7,
+                runSpacing: 7,
+                children:
+                    widget.project.tech
+                        .take(4)
+                        .map(
+                          (tech) => _TechBadge(
+                            label: tech,
+                            color: CyberpunkColors.screenTeal,
+                          ),
+                        )
+                        .toList(),
+              ),
+              const SizedBox(height: 15),
+              ...?widget.project.bullets
+                  ?.take(2)
+                  .map(
+                    (bullet) => _BulletLine(
+                      text: bullet,
+                      color: CyberpunkColors.screenTeal,
+                      compact: true,
+                    ),
+                  ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  IconData _iconForProject(Project project) {
+    final text = '${project.title} ${project.tech.join(' ')}'.toLowerCase();
+    if (text.contains('mobile') ||
+        text.contains('android') ||
+        text.contains('maui')) {
+      return Icons.phone_android_outlined;
+    }
+    if (text.contains('iot') || text.contains('esp') || text.contains('mqtt')) {
+      return Icons.sensors_outlined;
+    }
+    if (text.contains('api') || text.contains('node')) {
+      return Icons.api_outlined;
+    }
+    if (text.contains('erp') || text.contains('sistema')) {
+      return Icons.dashboard_customize_outlined;
+    }
+    return Icons.code;
+  }
+}
+
+class _ExperienceBlock extends StatelessWidget {
+  const _ExperienceBlock();
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const _SectionHeader(
+          eyebrow: 'Experiência',
+          title: 'Histórico com foco em produto operacional',
+          subtitle:
+              'Experiências resumidas por impacto, tecnologia e responsabilidade de entrega.',
+        ),
+        const SizedBox(height: 22),
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final isWide = constraints.maxWidth >= 900;
+            final cards =
+                experiences
+                    .map(
+                      (experience) => _ExperienceCard(experience: experience),
+                    )
+                    .toList();
+            if (isWide) {
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(child: cards[0]),
+                  const SizedBox(width: 16),
+                  Expanded(child: cards[1]),
+                ],
+              );
+            }
+            return Column(
+              children: [cards[0], const SizedBox(height: 14), cards[1]],
+            );
+          },
+        ),
+      ],
+    );
+  }
+}
+
+class _ExperienceCard extends StatefulWidget {
+  final Experience experience;
+
+  const _ExperienceCard({required this.experience});
+
+  @override
+  State<_ExperienceCard> createState() => _ExperienceCardState();
+}
+
+class _ExperienceCardState extends State<_ExperienceCard> {
+  bool _expanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final bullets =
+        _expanded
+            ? widget.experience.bullets
+            : widget.experience.bullets.take(3).toList();
+
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 220),
+      padding: const EdgeInsets.all(20),
+      decoration: _cardDecoration(
+        border:
+            _expanded
+                ? CyberpunkColors.primaryOrange.withValues(alpha: 0.55)
+                : Colors.white.withValues(alpha: 0.08),
+        glow: CyberpunkColors.primaryOrange.withValues(
+          alpha: _expanded ? 0.12 : 0.03,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const _IconBox(
+                icon: Icons.work_outline,
+                color: CyberpunkColors.primaryOrange,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      widget.experience.company,
+                      style: const TextStyle(
+                        color: CyberpunkColors.terminalGreen,
+                        fontSize: 20,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    const SizedBox(height: 5),
+                    Text(
+                      widget.experience.role,
+                      style: const TextStyle(
+                        color: CyberpunkColors.primaryOrange,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 10),
+              _StatusChip(label: widget.experience.period),
+            ],
+          ),
+          if (widget.experience.subtitle != null) ...[
+            const SizedBox(height: 14),
+            Text(
+              widget.experience.subtitle!,
+              style: const TextStyle(
+                color: CyberpunkColors.screenTeal,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ],
+          const SizedBox(height: 16),
+          AnimatedSize(
+            duration: const Duration(milliseconds: 240),
+            curve: Curves.easeOutCubic,
+            child: Column(
+              children:
+                  bullets
+                      .map(
+                        (bullet) => _BulletLine(
+                          text: bullet,
+                          color: CyberpunkColors.primaryOrange,
+                        ),
+                      )
+                      .toList(),
+            ),
+          ),
+          const SizedBox(height: 10),
+          TextButton.icon(
+            onPressed: () => setState(() => _expanded = !_expanded),
+            icon: Icon(_expanded ? Icons.expand_less : Icons.expand_more),
+            label: Text(_expanded ? 'Ver menos' : 'Ver detalhes'),
+            style: TextButton.styleFrom(
+              foregroundColor: CyberpunkColors.primaryOrange,
+              padding: EdgeInsets.zero,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StackBlock extends StatelessWidget {
+  const _StackBlock();
+
+  @override
+  Widget build(BuildContext context) {
+    final groups = {
+      'Mobile e web': [
+        'Flutter',
+        'Dart',
+        'Android SDK',
+        '.NET MAUI',
+        'C#',
+        'Provider',
+        'Riverpod',
+      ],
+      'Dados e backend': [
+        'Supabase',
+        'PostgreSQL',
+        'SQLite',
+        'Node.js',
+        'REST APIs',
+        'Firebase',
+        'FCM',
+      ],
+      'Operação e IA': [
+        'Google Maps',
+        'Geofence',
+        'GitHub Actions',
+        'Gemini API',
+        'SLM local',
+        'MQTT',
+        'ESP32',
+      ],
+    };
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const _SectionHeader(
+          eyebrow: 'Stack',
+          title: 'Ferramentas que sustentam o Granith',
+          subtitle:
+              'A stack aparece agrupada por finalidade para o visitante entender onde cada tecnologia entra.',
+        ),
+        const SizedBox(height: 22),
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final isWide = constraints.maxWidth >= 920;
+            final cards =
+                groups.entries
+                    .map(
+                      (entry) =>
+                          _StackGroup(title: entry.key, skills: entry.value),
+                    )
+                    .toList();
+
+            if (isWide) {
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  for (var i = 0; i < cards.length; i++) ...[
+                    Expanded(child: cards[i]),
+                    if (i < cards.length - 1) const SizedBox(width: 14),
+                  ],
+                ],
+              );
+            }
+            return Column(
+              children: [
+                for (var i = 0; i < cards.length; i++) ...[
+                  cards[i],
+                  if (i < cards.length - 1) const SizedBox(height: 14),
+                ],
+              ],
+            );
+          },
+        ),
+      ],
+    );
+  }
+}
+
+class _StackGroup extends StatelessWidget {
+  final String title;
+  final List<String> skills;
+
+  const _StackGroup({required this.title, required this.skills});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: _cardDecoration(
+        border: Colors.white.withValues(alpha: 0.08),
+        glow: CyberpunkColors.screenTeal.withValues(alpha: 0.03),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: const TextStyle(
+              color: CyberpunkColors.terminalGreen,
+              fontSize: 18,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(height: 14),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children:
+                skills
+                    .map(
+                      (skill) => _TechBadge(
+                        label: skill,
+                        color: CyberpunkColors.screenTeal,
+                      ),
+                    )
+                    .toList(),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ContactBand extends StatelessWidget {
+  final void Function(String url) onOpen;
+
+  const _ContactBand({super.key, required this.onOpen});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: CyberpunkColors.terminalGreen.withValues(alpha: 0.06),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: CyberpunkColors.primaryOrange.withValues(alpha: 0.28),
+        ),
+      ),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final isWide = constraints.maxWidth >= 860;
+          final copy = Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const _Eyebrow(label: 'Contato'),
+              const SizedBox(height: 12),
+              const Text(
+                'Quer ver o projeto funcionando ou conversar sobre produto Flutter?',
+                style: TextStyle(
+                  color: CyberpunkColors.terminalGreen,
+                  fontWeight: FontWeight.w900,
+                  fontSize: 30,
+                  height: 1.1,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                '${profile.location} | ${profile.availability ?? 'Disponível para novos desafios'}',
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.62),
+                  height: 1.5,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          );
+          final actions = Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            children: [
+              _ActionButton(
+                label: 'Email',
+                icon: Icons.mail_outline,
+                filled: true,
+                onTap: () => onOpen('mailto:${profile.email}'),
+              ),
+              _ActionButton(
+                label: 'LinkedIn',
+                icon: Icons.link,
+                onTap: () => onOpen(profile.linkedin),
+              ),
+              _ActionButton(
+                label: 'GitHub',
+                icon: Icons.code,
+                onTap: () => onOpen(profile.github),
+              ),
+            ],
+          );
+
+          return isWide
+              ? Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Expanded(child: copy),
+                  const SizedBox(width: 24),
+                  actions,
+                ],
+              )
+              : Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [copy, const SizedBox(height: 22), actions],
+              );
+        },
+      ),
+    );
+  }
+}
+
+class _SectionHeader extends StatelessWidget {
+  final String eyebrow;
+  final String title;
+  final String subtitle;
+
+  const _SectionHeader({
+    super.key,
+    required this.eyebrow,
+    required this.title,
+    required this.subtitle,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _Eyebrow(label: eyebrow),
+        const SizedBox(height: 12),
+        ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 840),
+          child: Text(
+            title,
+            style: const TextStyle(
+              color: CyberpunkColors.terminalGreen,
+              fontWeight: FontWeight.w900,
+              fontSize: 36,
+              height: 1.08,
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 760),
+          child: Text(
+            subtitle,
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.64),
+              fontSize: 16,
+              height: 1.55,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _PageShell extends StatelessWidget {
+  final Widget child;
+
+  const _PageShell({required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 18),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 1240),
+          child: child,
+        ),
+      ),
+    );
+  }
+}
+
+class _ActionButton extends StatefulWidget {
+  final String label;
+  final IconData icon;
+  final bool filled;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _ActionButton({
+    required this.label,
+    required this.icon,
+    required this.onTap,
+    this.filled = false,
+    this.color = CyberpunkColors.primaryOrange,
+  });
+
+  @override
+  State<_ActionButton> createState() => _ActionButtonState();
+}
+
+class _ActionButtonState extends State<_ActionButton> {
+  bool _hovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final bg =
+        widget.filled
+            ? (_hovered ? CyberpunkColors.glowYellow : widget.color)
+            : (_hovered
+                ? widget.color.withValues(alpha: 0.13)
+                : Colors.transparent);
+    final fg = widget.filled ? CyberpunkColors.deepBlack : widget.color;
+
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
+          decoration: BoxDecoration(
+            color: bg,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: widget.color.withValues(alpha: widget.filled ? 0 : 0.42),
+            ),
+            boxShadow: [
+              if (widget.filled)
+                BoxShadow(
+                  color: widget.color.withValues(alpha: _hovered ? 0.28 : 0.14),
+                  blurRadius: _hovered ? 24 : 12,
+                  offset: const Offset(0, 9),
+                ),
+            ],
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(widget.icon, size: 18, color: fg),
+              const SizedBox(width: 9),
+              Text(
+                widget.label,
+                style: TextStyle(
+                  color: fg,
+                  fontWeight: FontWeight.w900,
+                  fontSize: 13,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _Eyebrow extends StatelessWidget {
+  final String label;
+
+  const _Eyebrow({required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      decoration: BoxDecoration(
+        color: CyberpunkColors.primaryOrange.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(
+          color: CyberpunkColors.primaryOrange.withValues(alpha: 0.28),
+        ),
+      ),
+      child: Text(
+        label.toUpperCase(),
+        style: const TextStyle(
+          color: CyberpunkColors.primaryOrange,
+          fontSize: 11,
+          fontWeight: FontWeight.w900,
+        ),
+      ),
+    );
+  }
+}
+
+class _TechBadge extends StatelessWidget {
+  final String label;
+  final Color color;
+
+  const _TechBadge({
+    required this.label,
+    this.color = CyberpunkColors.primaryOrange,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: color.withValues(alpha: 0.22)),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          color: color,
+          fontSize: 12,
+          fontWeight: FontWeight.w800,
+        ),
+      ),
+    );
+  }
+}
+
+class _StatusChip extends StatelessWidget {
+  final String label;
+
+  const _StatusChip({required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
+      decoration: BoxDecoration(
+        color: CyberpunkColors.screenTeal.withValues(alpha: 0.11),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(
+          color: CyberpunkColors.screenTeal.withValues(alpha: 0.22),
+        ),
+      ),
+      child: Text(
+        label,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: const TextStyle(
+          color: CyberpunkColors.screenTeal,
+          fontWeight: FontWeight.w900,
+          fontSize: 11,
+        ),
+      ),
+    );
+  }
+}
+
+class _IconBox extends StatelessWidget {
+  final IconData icon;
+  final Color color;
+
+  const _IconBox({required this.icon, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 46,
+      height: 46,
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withValues(alpha: 0.24)),
+      ),
+      child: Icon(icon, color: color, size: 22),
+    );
+  }
+}
+
+class _TinyIcon extends StatelessWidget {
+  final IconData icon;
+
+  const _TinyIcon({required this.icon});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 34,
+      height: 34,
+      decoration: BoxDecoration(
+        color: CyberpunkColors.primaryOrange.withValues(alpha: 0.11),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Icon(icon, color: CyberpunkColors.primaryOrange, size: 18),
+    );
+  }
+}
+
+class _BulletLine extends StatelessWidget {
+  final String text;
+  final Color color;
+  final bool compact;
+
+  const _BulletLine({
+    required this.text,
+    required this.color,
+    this.compact = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: compact ? 8 : 10),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 7,
+            height: 7,
+            margin: const EdgeInsets.only(top: 7),
+            decoration: BoxDecoration(
+              color: color,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              text,
+              maxLines: compact ? 3 : null,
+              overflow: compact ? TextOverflow.ellipsis : TextOverflow.visible,
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.66),
+                height: 1.42,
+                fontSize: compact ? 12.5 : 14,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+BoxDecoration _cardDecoration({required Color border, required Color glow}) {
+  return BoxDecoration(
+    color: CyberpunkColors.charcoalGray.withValues(alpha: 0.74),
+    borderRadius: BorderRadius.circular(8),
+    border: Border.all(color: border),
+    boxShadow: [
+      BoxShadow(color: glow, blurRadius: 28, offset: const Offset(0, 16)),
+      BoxShadow(
+        color: Colors.black.withValues(alpha: 0.30),
+        blurRadius: 20,
+        offset: const Offset(0, 14),
+      ),
+    ],
+  );
+}
+
+class _SkyforgeBackgroundPainter extends CustomPainter {
+  final double progress;
+  final double scrollOffset;
+
+  const _SkyforgeBackgroundPainter({
+    required this.progress,
+    required this.scrollOffset,
   });
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint();
+    final rect = Offset.zero & size;
+    final paint =
+        Paint()
+          ..shader = const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              CyberpunkColors.deepBlack,
+              Color(0xFF0A1212),
+              Color(0xFF0D0B08),
+            ],
+          ).createShader(rect);
+    canvas.drawRect(rect, paint);
 
-    // Desenha partículas
-    for (final particle in particles) {
-      particle.update();
-      paint.color = CyberpunkColors.primaryOrange.withOpacity(particle.opacity);
-
-      final dx =
-          particle.x * size.width +
-          math.sin(animation * 2 * math.pi + particle.x * 10) * 20;
-      final dy = particle.y * size.height - parallaxOffset * 0.5;
-
-      canvas.drawCircle(Offset(dx, dy), particle.size, paint);
+    final gridPaint =
+        Paint()
+          ..color = Colors.white.withValues(alpha: 0.028)
+          ..strokeWidth = 1;
+    const spacing = 64.0;
+    final yShift = (scrollOffset * 0.12) % spacing;
+    for (double x = -spacing; x < size.width + spacing; x += spacing) {
+      canvas.drawLine(Offset(x, 0), Offset(x + 90, size.height), gridPaint);
+    }
+    for (
+      double y = -spacing + yShift;
+      y < size.height + spacing;
+      y += spacing
+    ) {
+      canvas.drawLine(Offset(0, y), Offset(size.width, y), gridPaint);
     }
 
-    // Desenha linhas de conexão entre partículas próximas
-    paint.color = CyberpunkColors.primaryOrange.withOpacity(0.1);
-    paint.strokeWidth = 1;
+    final goldPaint =
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.2
+          ..color = CyberpunkColors.primaryOrange.withValues(alpha: 0.12);
+    final tealPaint =
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1
+          ..color = CyberpunkColors.screenTeal.withValues(alpha: 0.10);
 
-    for (int i = 0; i < particles.length - 1; i++) {
-      int connections = 0;
-      for (int j = i + 1; j < particles.length && connections < 2; j++) {
-        final p1 = particles[i];
-        final p2 = particles[j];
+    final wave = math.sin(progress * math.pi * 2);
+    final path =
+        Path()
+          ..moveTo(size.width * 0.62, -40)
+          ..lineTo(size.width + 60, size.height * (0.20 + wave * 0.02))
+          ..lineTo(size.width * 0.86, size.height * 0.66)
+          ..lineTo(size.width * 0.54, size.height * 0.18)
+          ..close();
+    canvas.drawPath(path, goldPaint);
 
-        final dx1 = p1.x * size.width;
-        final dy1 = p1.y * size.height - parallaxOffset * 0.5;
-        final dx2 = p2.x * size.width;
-        final dy2 = p2.y * size.height - parallaxOffset * 0.5;
-
-        final distance = math.sqrt(
-          math.pow(dx2 - dx1, 2) + math.pow(dy2 - dy1, 2),
-        );
-
-        if (distance < 80) {
-          // Reduzido de 100 para 80 para desempenho
-          canvas.drawLine(Offset(dx1, dy1), Offset(dx2, dy2), paint);
-          connections++;
-        }
-      }
-    }
+    final path2 =
+        Path()
+          ..moveTo(-40, size.height * 0.72)
+          ..lineTo(size.width * 0.30, size.height * (0.54 + wave * 0.01))
+          ..lineTo(size.width * 0.52, size.height + 80);
+    canvas.drawPath(path2, tealPaint);
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
+  bool shouldRepaint(covariant _SkyforgeBackgroundPainter oldDelegate) {
+    return oldDelegate.progress != progress ||
+        oldDelegate.scrollOffset != scrollOffset;
+  }
 }
 
-class AnimatedOnVisible extends StatefulWidget {
-  final Widget child;
-  final Duration duration;
-  final double offsetY;
-  final Curve curve;
+class _PanelLinesPainter extends CustomPainter {
+  final double progress;
 
-  const AnimatedOnVisible({
-    required this.child,
-    this.duration = const Duration(milliseconds: 700),
-    this.offsetY = 60,
-    this.curve = Curves.easeOutCubic,
-    super.key,
-  });
+  const _PanelLinesPainter({required this.progress});
 
   @override
-  State<AnimatedOnVisible> createState() => _AnimatedOnVisibleState();
-}
-
-class _AnimatedOnVisibleState extends State<AnimatedOnVisible>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _fade;
-  late Animation<Offset> _slide;
-  bool _visible = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(vsync: this, duration: widget.duration);
-    _fade = CurvedAnimation(parent: _controller, curve: widget.curve);
-    _slide = Tween<Offset>(
-      begin: Offset(0, widget.offsetY / 100),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(parent: _controller, curve: widget.curve));
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  void _onVisibilityChanged(VisibilityInfo info) {
-    if (!_visible && info.visibleFraction > 0.1) {
-      _visible = true;
-      _controller.forward();
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return VisibilityDetector(
-      key: widget.key ?? UniqueKey(),
-      onVisibilityChanged: _onVisibilityChanged,
-      child: AnimatedBuilder(
-        animation: _controller,
-        builder:
-            (context, child) => Opacity(
-              opacity: _fade.value,
-              child: Transform.translate(
-                offset: Offset(0, _slide.value.dy * 100),
-                child: child,
-              ),
-            ),
-        child: widget.child,
-      ),
+  void paint(Canvas canvas, Size size) {
+    final paint =
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1
+          ..color = CyberpunkColors.primaryOrange.withValues(alpha: 0.12);
+    final teal =
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1
+          ..color = CyberpunkColors.screenTeal.withValues(alpha: 0.10);
+    final offset = math.sin(progress * math.pi * 2) * 10;
+    canvas.drawLine(
+      Offset(size.width * 0.18 + offset, 0),
+      Offset(size.width * 0.56, size.height),
+      paint,
+    );
+    canvas.drawLine(
+      Offset(size.width * 0.82, 0),
+      Offset(size.width * 0.48 + offset, size.height),
+      teal,
+    );
+    canvas.drawRect(
+      Rect.fromLTWH(10, 10, size.width - 20, size.height - 20),
+      paint..color = CyberpunkColors.primaryOrange.withValues(alpha: 0.08),
     );
   }
-}
-
-// Widget para lazy loading e descarregamento de cada seção
-class _LazySection extends StatefulWidget {
-  final WidgetBuilder builder;
-  const _LazySection({super.key, required this.builder});
 
   @override
-  State<_LazySection> createState() => _LazySectionState();
-}
-
-class _LazySectionState extends State<_LazySection> {
-  bool _visible = false;
-
-  @override
-  Widget build(BuildContext context) {
-    return VisibilityDetector(
-      key: widget.key ?? UniqueKey(),
-      onVisibilityChanged: (info) {
-        // Carrega quando entra, descarrega quando sai do viewport
-        final isNowVisible = info.visibleFraction > 0.01;
-        if (_visible != isNowVisible) {
-          setState(() => _visible = isNowVisible);
-        }
-      },
-      child:
-          _visible
-              ? widget.builder(context)
-              : const SizedBox(height: 180), // Placeholder com altura menor
-    );
-  }
-}
-
-// Helper para construir seções
-class _SectionBuilder {
-  final Key key;
-  final WidgetBuilder builder;
-  _SectionBuilder({required this.key, required this.builder});
-}
-
-class OptimizedProjectCard extends StatefulWidget {
-  final Project project;
-  final double? width;
-  final int index;
-
-  const OptimizedProjectCard({
-    super.key,
-    required this.project,
-    this.width,
-    this.index = 0,
-  });
-
-  @override
-  State<OptimizedProjectCard> createState() => _OptimizedProjectCardState();
-}
-
-class _OptimizedProjectCardState extends State<OptimizedProjectCard>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _scaleAnimation;
-  late Animation<double> _fadeAnimation;
-  late Animation<Offset> _slideAnimation;
-
-  bool _hasAnimated = false;
-
-  @override
-  void initState() {
-    super.initState();
-
-    _controller = AnimationController(
-      duration: const Duration(milliseconds: 800),
-      vsync: this,
-    );
-
-    _scaleAnimation = Tween<double>(
-      begin: 0.85,
-      end: 1.0,
-    ).animate(CurvedAnimation(parent: _controller, curve: Curves.elasticOut));
-
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _controller,
-        curve: const Interval(0.0, 0.7, curve: Curves.easeOut),
-      ),
-    );
-
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.5),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutBack));
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  void _onVisibilityChanged(VisibilityInfo info) {
-    if (!_hasAnimated && info.visibleFraction > 0.2) {
-      _hasAnimated = true;
-
-      // Delay progressivo para cada card
-      Future.delayed(Duration(milliseconds: widget.index * 150), () {
-        if (mounted) {
-          _controller.forward();
-        }
-      });
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return VisibilityDetector(
-      key: Key('optimized_project_${widget.index}'),
-      onVisibilityChanged: _onVisibilityChanged,
-      child: AnimatedBuilder(
-        animation: _controller,
-        builder: (context, child) {
-          return Transform.scale(
-            scale: _scaleAnimation.value,
-            child: SlideTransition(
-              position: _slideAnimation,
-              child: FadeTransition(
-                opacity: _fadeAnimation,
-                child: ProjectCard(
-                  project: widget.project,
-                  width: widget.width,
-                  index: widget.index,
-                ),
-              ),
-            ),
-          );
-        },
-      ),
-    );
+  bool shouldRepaint(covariant _PanelLinesPainter oldDelegate) {
+    return oldDelegate.progress != progress;
   }
 }
