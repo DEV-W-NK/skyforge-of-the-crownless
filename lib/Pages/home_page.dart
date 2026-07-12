@@ -79,6 +79,8 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      const _StoryBlock(),
+                      const SizedBox(height: 86),
                       _SectionHeader(
                         key: _granithKey,
                         eyebrow: 'Produto principal',
@@ -1143,6 +1145,293 @@ class _AuthorPhotoStack extends StatelessWidget {
           description: 'Mobile e backend',
           aspectRatio: 16 / 10,
           alignment: Alignment.center,
+        ),
+      ],
+    );
+  }
+}
+
+class _StoryBlock extends StatelessWidget {
+  const _StoryBlock();
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isWide = constraints.maxWidth >= 960;
+        final story = Container(
+          padding: const EdgeInsets.all(24),
+          decoration: _cardDecoration(
+            border: CyberpunkColors.primaryOrange.withValues(alpha: 0.26),
+            glow: CyberpunkColors.primaryOrange.withValues(alpha: 0.05),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const _Eyebrow(label: 'Uma história por trás'),
+              const SizedBox(height: 16),
+              const Text(
+                'Programar também foi uma forma de continuar uma história.',
+                style: TextStyle(
+                  color: CyberpunkColors.terminalGreen,
+                  fontSize: 32,
+                  fontWeight: FontWeight.w900,
+                  height: 1.08,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Guilherme Leonardo não se tornou programador por acaso. Antes dele, esse era um sonho de sua mãe, que desejava seguir a área técnica, mas precisou adiar esse caminho por causa da gravidez. Em 2021, durante a pandemia, Guilherme enfrentou a fase mais dura da sua vida: a perda da mãe. No meio desse furacão, decidiu encarar de frente aquilo que ela tanto havia almejado.',
+                style: _storyTextStyle(),
+              ),
+              const SizedBox(height: 14),
+              Text(
+                'Ele entrou no mesmo curso técnico que ela sonhava fazer e passou em 21º lugar, mesmo estando doente no dia da prova, com dificuldade até para ler corretamente. Depois disso, perseguiu um estágio a todo custo até chegar à Enebras, onde construiu seu primeiro sistema de muitos.',
+                style: _storyTextStyle(),
+              ),
+              const SizedBox(height: 14),
+              Text(
+                'O primeiro código não era perfeito, nem limpo, nem otimizado. Mas funcionava, resolvia problemas reais e carregava uma característica que permanece até hoje: empenho em fazer a operação sair do lugar. Guilherme também ajudava e treinava outros estagiários. Ao fim do contrato, a Enebras decidiu mantê-lo como PJ para concluir e estabilizar os sistemas.',
+                style: _storyTextStyle(),
+              ),
+              const SizedBox(height: 14),
+              Text(
+                'Em 12/08/2025, com os sistemas funcionando e um estagiário preparado para assumir sua posição, Guilherme entendeu que aquele ciclo estava concluído. Já iniciando Engenharia da Computação, saiu em busca de desafios maiores. Um mês depois, encontrou a Interação: uma empresa mais técnica, focada em desenvolvimento, onde passou a trabalhar ao lado de profissionais que o guiam com experiência, visão de produto e rigor de engenharia. É onde está atualmente, desenvolvendo um aplicativo multiplataforma de rede social para eventos, pensado para alta escala.',
+                style: _storyTextStyle(),
+              ),
+            ],
+          ),
+        );
+        const timeline = _StoryTimeline();
+
+        return isWide
+            ? Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(flex: 7, child: story),
+                const SizedBox(width: 18),
+                const Expanded(flex: 4, child: timeline),
+              ],
+            )
+            : const Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _StoryMobileCopy(),
+                SizedBox(height: 16),
+                _StoryTimeline(),
+              ],
+            );
+      },
+    );
+  }
+
+  TextStyle _storyTextStyle() {
+    return TextStyle(
+      color: Colors.white.withValues(alpha: 0.68),
+      fontSize: 15.5,
+      height: 1.62,
+      fontWeight: FontWeight.w500,
+    );
+  }
+}
+
+class _StoryMobileCopy extends StatelessWidget {
+  const _StoryMobileCopy();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(22),
+      decoration: _cardDecoration(
+        border: CyberpunkColors.primaryOrange.withValues(alpha: 0.26),
+        glow: CyberpunkColors.primaryOrange.withValues(alpha: 0.05),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const _Eyebrow(label: 'Uma história por trás'),
+          const SizedBox(height: 14),
+          const Text(
+            'Programar também foi uma forma de continuar uma história.',
+            style: TextStyle(
+              color: CyberpunkColors.terminalGreen,
+              fontSize: 28,
+              fontWeight: FontWeight.w900,
+              height: 1.08,
+            ),
+          ),
+          const SizedBox(height: 14),
+          Text(
+            'Guilherme entrou na programação carregando um sonho que antes foi de sua mãe. Depois de perdê-la em 2021, durante a pandemia, decidiu enfrentar esse caminho de uma vez: passou em 21º lugar no técnico, mesmo doente no dia da prova, perseguiu seu primeiro estágio e chegou à Enebras.',
+            style: _storyMobileStyle(),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'Ali nasceram seus primeiros sistemas. O código ainda não era limpo nem otimizado, mas resolvia problemas reais, sustentava operação e mostrava empenho. Depois do estágio, foi mantido como PJ para concluir os sistemas. Em 12/08/2025, com tudo funcionando e um estagiário preparado para assumir, iniciou um novo ciclo: Engenharia da Computação e, logo depois, Interação, onde atua hoje em um app multiplataforma de rede social para eventos, pensado para alta escala.',
+            style: _storyMobileStyle(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  TextStyle _storyMobileStyle() {
+    return TextStyle(
+      color: Colors.white.withValues(alpha: 0.68),
+      fontSize: 15,
+      height: 1.58,
+      fontWeight: FontWeight.w500,
+    );
+  }
+}
+
+class _StoryTimeline extends StatelessWidget {
+  const _StoryTimeline();
+
+  @override
+  Widget build(BuildContext context) {
+    const items = [
+      _StoryMilestoneData(
+        year: '2021',
+        title: 'Virada pessoal',
+        body:
+            'A perda da mãe transforma um sonho interrompido em decisão de carreira.',
+        icon: Icons.bolt_outlined,
+      ),
+      _StoryMilestoneData(
+        year: '21º lugar',
+        title: 'Entrada no técnico',
+        body:
+            'Mesmo doente no dia da prova, conquista a vaga no curso que ela almejava.',
+        icon: Icons.school_outlined,
+      ),
+      _StoryMilestoneData(
+        year: 'Enebras',
+        title: 'Primeiros sistemas',
+        body:
+            'Constrói soluções reais, aprende no campo e passa a treinar outros estagiários.',
+        icon: Icons.construction_outlined,
+      ),
+      _StoryMilestoneData(
+        year: '12/08/2025',
+        title: 'Ciclo concluído',
+        body:
+            'Sistemas rodando, transição encaminhada e início de uma nova busca técnica.',
+        icon: Icons.flag_outlined,
+      ),
+      _StoryMilestoneData(
+        year: 'Hoje',
+        title: 'Interação',
+        body:
+            'Atuação em app social multiplataforma para eventos, com foco em escala.',
+        icon: Icons.rocket_launch_outlined,
+      ),
+    ];
+
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: _cardDecoration(
+        border: CyberpunkColors.screenTeal.withValues(alpha: 0.20),
+        glow: CyberpunkColors.screenTeal.withValues(alpha: 0.04),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Linha do tempo',
+            style: TextStyle(
+              color: CyberpunkColors.terminalGreen,
+              fontSize: 20,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(height: 16),
+          for (var i = 0; i < items.length; i++) ...[
+            _StoryMilestone(item: items[i]),
+            if (i < items.length - 1)
+              Container(
+                width: 1,
+                height: 20,
+                margin: const EdgeInsets.only(left: 22),
+                color: Colors.white.withValues(alpha: 0.10),
+              ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _StoryMilestoneData {
+  final String year;
+  final String title;
+  final String body;
+  final IconData icon;
+
+  const _StoryMilestoneData({
+    required this.year,
+    required this.title,
+    required this.body,
+    required this.icon,
+  });
+}
+
+class _StoryMilestone extends StatelessWidget {
+  final _StoryMilestoneData item;
+
+  const _StoryMilestone({required this.item});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 44,
+          height: 44,
+          decoration: BoxDecoration(
+            color: CyberpunkColors.screenTeal.withValues(alpha: 0.10),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: CyberpunkColors.screenTeal.withValues(alpha: 0.28),
+            ),
+          ),
+          child: Icon(item.icon, color: CyberpunkColors.screenTeal, size: 21),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                item.year,
+                style: const TextStyle(
+                  color: CyberpunkColors.primaryOrange,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                item.title,
+                style: const TextStyle(
+                  color: CyberpunkColors.terminalGreen,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              const SizedBox(height: 5),
+              Text(
+                item.body,
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.62),
+                  fontSize: 13,
+                  height: 1.38,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
         ),
       ],
     );
