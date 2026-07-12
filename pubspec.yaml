@@ -30,6 +30,9 @@ flutter:
     - Assets/TheCrownlessKing.mp3
     - Assets/granith_app_icon.png
     - Assets/granith_logo_wordmark.png
+    - Assets/profile_lab.png
+    - Assets/profile_black.png
+    - Assets/profile_notebook.png
 
 flutter_icons:
   android: true

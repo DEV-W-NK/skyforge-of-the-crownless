@@ -442,6 +442,8 @@ class _HeroSection extends StatelessWidget {
             ],
             const SizedBox(height: 34),
             const _HeroMarquee(),
+            const SizedBox(height: 34),
+            const _AuthorEditorial(),
           ],
         ),
       ),
@@ -979,6 +981,289 @@ class _HeroMarquee extends StatelessWidget {
         spacing: 10,
         runSpacing: 10,
         children: items.map((item) => _TechBadge(label: item)).toList(),
+      ),
+    );
+  }
+}
+
+class _AuthorEditorial extends StatelessWidget {
+  const _AuthorEditorial();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 24),
+      decoration: BoxDecoration(
+        border: Border.symmetric(
+          horizontal: BorderSide(color: Colors.white.withValues(alpha: 0.08)),
+        ),
+      ),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final isWide = constraints.maxWidth >= 980;
+          final copy = Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const _Eyebrow(label: 'Autor do projeto'),
+              const SizedBox(height: 14),
+              const Text(
+                'Um rosto por trás da engenharia.',
+                style: TextStyle(
+                  color: CyberpunkColors.terminalGreen,
+                  fontSize: 30,
+                  fontWeight: FontWeight.w900,
+                  height: 1.08,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'As fotos entram como assinatura visual: presença pessoal, contexto técnico e identidade. O foco continua nos produtos, mas agora o portfólio também cria confiança antes do visitante abrir os repositórios.',
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.64),
+                  fontSize: 15.5,
+                  height: 1.55,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 18),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: const [
+                  _TechBadge(label: 'Flutter'),
+                  _TechBadge(label: 'Produto'),
+                  _TechBadge(label: 'Mobile'),
+                  _TechBadge(label: 'ERP'),
+                ],
+              ),
+            ],
+          );
+          final photos =
+              isWide ? const _AuthorPhotoGrid() : const _AuthorPhotoStack();
+
+          return isWide
+              ? Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Expanded(flex: 5, child: copy),
+                  const SizedBox(width: 28),
+                  const Expanded(flex: 7, child: _AuthorPhotoGrid()),
+                ],
+              )
+              : Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [copy, const SizedBox(height: 22), photos],
+              );
+        },
+      ),
+    );
+  }
+}
+
+class _AuthorPhotoGrid extends StatelessWidget {
+  const _AuthorPhotoGrid();
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 420,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Expanded(
+            flex: 5,
+            child: _PhotoCard(
+              asset: 'Assets/profile_lab.png',
+              label: 'Pesquisa e produto',
+              description: 'Recorte fechado',
+              aspectRatio: 4 / 5,
+              alignment: Alignment(0, -0.35),
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            flex: 4,
+            child: Column(
+              children: const [
+                Expanded(
+                  child: _PhotoCard(
+                    asset: 'Assets/profile_black.png',
+                    label: 'Presença profissional',
+                    description: 'Campo e operação',
+                    aspectRatio: 16 / 10,
+                    alignment: Alignment.center,
+                  ),
+                ),
+                SizedBox(height: 14),
+                Expanded(
+                  child: _PhotoCard(
+                    asset: 'Assets/profile_notebook.png',
+                    label: 'Engenharia diária',
+                    description: 'Mobile e backend',
+                    aspectRatio: 16 / 10,
+                    alignment: Alignment.center,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AuthorPhotoStack extends StatelessWidget {
+  const _AuthorPhotoStack();
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: const [
+        _PhotoCard(
+          asset: 'Assets/profile_lab.png',
+          label: 'Pesquisa e produto',
+          description: 'Recorte fechado',
+          aspectRatio: 4 / 5,
+          alignment: Alignment(0, -0.35),
+        ),
+        SizedBox(height: 12),
+        _PhotoCard(
+          asset: 'Assets/profile_black.png',
+          label: 'Presença profissional',
+          description: 'Campo e operação',
+          aspectRatio: 16 / 10,
+          alignment: Alignment.center,
+        ),
+        SizedBox(height: 12),
+        _PhotoCard(
+          asset: 'Assets/profile_notebook.png',
+          label: 'Engenharia diária',
+          description: 'Mobile e backend',
+          aspectRatio: 16 / 10,
+          alignment: Alignment.center,
+        ),
+      ],
+    );
+  }
+}
+
+class _PhotoCard extends StatefulWidget {
+  final String asset;
+  final String label;
+  final String description;
+  final double aspectRatio;
+  final Alignment alignment;
+
+  const _PhotoCard({
+    required this.asset,
+    required this.label,
+    required this.description,
+    required this.aspectRatio,
+    required this.alignment,
+  });
+
+  @override
+  State<_PhotoCard> createState() => _PhotoCardState();
+}
+
+class _PhotoCardState extends State<_PhotoCard> {
+  bool _hovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      cursor: SystemMouseCursors.basic,
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      child: AnimatedScale(
+        scale: _hovered ? 1.012 : 1,
+        duration: const Duration(milliseconds: 180),
+        curve: Curves.easeOutCubic,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 220),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color:
+                  _hovered
+                      ? CyberpunkColors.primaryOrange.withValues(alpha: 0.58)
+                      : Colors.white.withValues(alpha: 0.08),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: CyberpunkColors.primaryOrange.withValues(
+                  alpha: _hovered ? 0.16 : 0.06,
+                ),
+                blurRadius: _hovered ? 28 : 16,
+                offset: const Offset(0, 16),
+              ),
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: AspectRatio(
+              aspectRatio: widget.aspectRatio,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  Image.asset(
+                    widget.asset,
+                    fit: BoxFit.cover,
+                    alignment: widget.alignment,
+                  ),
+                  DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.transparent,
+                          Colors.black.withValues(alpha: 0.08),
+                          Colors.black.withValues(alpha: 0.72),
+                        ],
+                        stops: const [0.0, 0.52, 1.0],
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    left: 14,
+                    right: 14,
+                    bottom: 14,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          widget.label,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: CyberpunkColors.terminalGreen,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          widget.description,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.66),
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
