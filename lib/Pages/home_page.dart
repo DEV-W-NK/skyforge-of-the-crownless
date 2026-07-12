@@ -1092,7 +1092,7 @@ class _AuthorPhotoGrid extends StatelessWidget {
                     label: 'Presença profissional',
                     description: 'Campo e operação',
                     aspectRatio: 16 / 10,
-                    alignment: Alignment.center,
+                    alignment: Alignment(0, -0.78),
                   ),
                 ),
                 SizedBox(height: 14),
@@ -1134,7 +1134,7 @@ class _AuthorPhotoStack extends StatelessWidget {
           label: 'Presença profissional',
           description: 'Campo e operação',
           aspectRatio: 16 / 10,
-          alignment: Alignment.center,
+          alignment: Alignment(0, -0.78),
         ),
         SizedBox(height: 12),
         _PhotoCard(
