@@ -1708,13 +1708,16 @@ class _FeatureProjectCardState extends State<_FeatureProjectCard> {
                     (bullet) => _BulletLine(text: bullet, color: widget.accent),
                   ),
               const SizedBox(height: 18),
-              if (widget.project.url != null && widget.project.url!.isNotEmpty)
+              if (widget.project.primaryUrl != null)
                 _ActionButton(
-                  label: 'Abrir repositório',
+                  label:
+                      widget.project.links.isNotEmpty
+                          ? 'Abrir produto'
+                          : 'Abrir repositório',
                   icon: Icons.arrow_outward,
                   filled: true,
                   color: widget.accent,
-                  onTap: () => widget.onOpen(widget.project.url!),
+                  onTap: () => widget.onOpen(widget.project.primaryUrl!),
                 ),
             ],
           ),
@@ -2039,14 +2042,16 @@ class _CompactProjectCardState extends State<_CompactProjectCard> {
 
   @override
   Widget build(BuildContext context) {
-    final hasUrl = widget.project.url != null && widget.project.url!.isNotEmpty;
+    final links = widget.project.effectiveLinks;
+    final storeLinks = widget.project.links;
+    final canOpenCard = links.length == 1;
 
     return MouseRegion(
-      cursor: hasUrl ? SystemMouseCursors.click : SystemMouseCursors.basic,
+      cursor: canOpenCard ? SystemMouseCursors.click : SystemMouseCursors.basic,
       onEnter: (_) => setState(() => _hovered = true),
       onExit: (_) => setState(() => _hovered = false),
       child: GestureDetector(
-        onTap: hasUrl ? () => widget.onOpen(widget.project.url!) : null,
+        onTap: canOpenCard ? () => widget.onOpen(links.first.url) : null,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 210),
           constraints: const BoxConstraints(minHeight: 318),
@@ -2070,7 +2075,7 @@ class _CompactProjectCardState extends State<_CompactProjectCard> {
                     color: CyberpunkColors.screenTeal,
                   ),
                   const Spacer(),
-                  if (hasUrl)
+                  if (links.isNotEmpty)
                     Icon(
                       Icons.arrow_outward,
                       color:
@@ -2129,6 +2134,22 @@ class _CompactProjectCardState extends State<_CompactProjectCard> {
                       compact: true,
                     ),
                   ),
+              if (storeLinks.isNotEmpty) ...[
+                const SizedBox(height: 16),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children:
+                      storeLinks
+                          .map(
+                            (link) => _ProjectLinkChip(
+                              link: link,
+                              onOpen: widget.onOpen,
+                            ),
+                          )
+                          .toList(),
+                ),
+              ],
             ],
           ),
         ),
@@ -2153,6 +2174,68 @@ class _CompactProjectCardState extends State<_CompactProjectCard> {
       return Icons.dashboard_customize_outlined;
     }
     return Icons.code;
+  }
+}
+
+class _ProjectLinkChip extends StatefulWidget {
+  final ProjectLink link;
+  final void Function(String url) onOpen;
+
+  const _ProjectLinkChip({required this.link, required this.onOpen});
+
+  @override
+  State<_ProjectLinkChip> createState() => _ProjectLinkChipState();
+}
+
+class _ProjectLinkChipState extends State<_ProjectLinkChip> {
+  bool _hovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      child: GestureDetector(
+        onTap: () => widget.onOpen(widget.link.url),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 8),
+          decoration: BoxDecoration(
+            color: CyberpunkColors.screenTeal.withValues(
+              alpha: _hovered ? 0.16 : 0.08,
+            ),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: CyberpunkColors.screenTeal.withValues(
+                alpha: _hovered ? 0.55 : 0.24,
+              ),
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                widget.link.label.toLowerCase().contains('google')
+                    ? Icons.android_outlined
+                    : Icons.phone_iphone_outlined,
+                color: CyberpunkColors.screenTeal,
+                size: 15,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                widget.link.label,
+                style: const TextStyle(
+                  color: CyberpunkColors.terminalGreen,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
 

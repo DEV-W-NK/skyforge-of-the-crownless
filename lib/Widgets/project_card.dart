@@ -154,12 +154,12 @@ class _ProjectCardState extends State<ProjectCard>
         color: CyberpunkColors.charcoalGray,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: CyberpunkColors.primaryOrange.withOpacity(0.5),
+          color: CyberpunkColors.primaryOrange.withValues(alpha: 0.5),
           width: 2,
         ),
         boxShadow: [
           BoxShadow(
-            color: CyberpunkColors.primaryOrange.withOpacity(0.08),
+            color: CyberpunkColors.primaryOrange.withValues(alpha: 0.08),
             blurRadius: 12,
             spreadRadius: 1,
           ),
@@ -217,10 +217,10 @@ class _ProjectCardState extends State<ProjectCard>
         Container(
           padding: EdgeInsets.all(isMobile ? 8 : 12),
           decoration: BoxDecoration(
-            color: CyberpunkColors.primaryOrange.withOpacity(0.15),
+            color: CyberpunkColors.primaryOrange.withValues(alpha: 0.15),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: CyberpunkColors.primaryOrange.withOpacity(0.7),
+              color: CyberpunkColors.primaryOrange.withValues(alpha: 0.7),
               width: 1.5,
             ),
           ),
@@ -273,10 +273,10 @@ class _ProjectCardState extends State<ProjectCard>
                 vertical: isMobile ? 3 : 4,
               ),
               decoration: BoxDecoration(
-                color: CyberpunkColors.screenTeal.withOpacity(0.12),
+                color: CyberpunkColors.screenTeal.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(6),
                 border: Border.all(
-                  color: CyberpunkColors.screenTeal.withOpacity(0.25),
+                  color: CyberpunkColors.screenTeal.withValues(alpha: 0.25),
                 ),
               ),
               child: Text(
@@ -335,16 +335,19 @@ class _ProjectCardState extends State<ProjectCard>
   Widget _buildActionButton(BuildContext context, bool isMobile) {
     final hasDetails =
         widget.project.bullets != null && widget.project.bullets!.length > 2;
-    final hasUrl = widget.project.url != null && widget.project.url!.isNotEmpty;
+    final links = widget.project.effectiveLinks;
 
-    if (!hasDetails && !hasUrl) {
+    if (!hasDetails && links.isEmpty) {
       return const SizedBox.shrink();
     }
 
-    return Row(
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
       children: [
         if (hasDetails)
-          Expanded(
+          SizedBox(
+            width: links.isEmpty ? double.infinity : 150,
             child: OutlinedButton.icon(
               onPressed: () => setState(() => _expanded = !_expanded),
               icon: Icon(
@@ -362,7 +365,7 @@ class _ProjectCardState extends State<ProjectCard>
               style: OutlinedButton.styleFrom(
                 foregroundColor: CyberpunkColors.primaryOrange,
                 side: BorderSide(
-                  color: CyberpunkColors.primaryOrange.withOpacity(0.65),
+                  color: CyberpunkColors.primaryOrange.withValues(alpha: 0.65),
                 ),
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 shape: RoundedRectangleBorder(
@@ -371,14 +374,19 @@ class _ProjectCardState extends State<ProjectCard>
               ),
             ),
           ),
-        if (hasDetails && hasUrl) const SizedBox(width: 8),
-        if (hasUrl)
-          Expanded(
+        for (final link in links)
+          SizedBox(
+            width: links.length > 1 ? 150 : double.infinity,
             child: ElevatedButton.icon(
-              onPressed: () => _openLink(context, widget.project.url!),
-              icon: const Icon(Icons.launch, size: 16),
+              onPressed: () => _openLink(link.url),
+              icon: Icon(
+                link.label.toLowerCase().contains('google')
+                    ? Icons.android_outlined
+                    : Icons.launch,
+                size: 16,
+              ),
               label: Text(
-                'ABRIR',
+                link.label.toUpperCase(),
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
                   letterSpacing: 1.0,
@@ -400,7 +408,7 @@ class _ProjectCardState extends State<ProjectCard>
     );
   }
 
-  Future<void> _openLink(BuildContext context, String url) async {
+  Future<void> _openLink(String url) async {
     final uri = Uri.tryParse(url);
     if (uri == null) {
       ScaffoldMessenger.of(
@@ -412,11 +420,13 @@ class _ProjectCardState extends State<ProjectCard>
       if (await canLaunchUrl(uri)) {
         await launchUrl(uri, mode: LaunchMode.externalApplication);
       } else {
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Não foi possível abrir o link')),
         );
       }
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('Erro ao abrir o link: $e')));

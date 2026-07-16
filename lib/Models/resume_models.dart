@@ -43,6 +43,7 @@ class Project {
   final String subtitle;
   final List<String> tech;
   final String? url;
+  final List<ProjectLink> links;
   final List<String>? bullets;
 
   Project({
@@ -50,8 +51,36 @@ class Project {
     required this.subtitle,
     required this.tech,
     this.url,
+    this.links = const [],
     this.bullets,
   });
+
+  String? get primaryUrl {
+    if (url != null && url!.isNotEmpty) {
+      return url;
+    }
+    if (links.isNotEmpty) {
+      return links.first.url;
+    }
+    return null;
+  }
+
+  List<ProjectLink> get effectiveLinks {
+    if (links.isNotEmpty) {
+      return links;
+    }
+    if (url != null && url!.isNotEmpty) {
+      return [ProjectLink(label: 'Abrir', url: url!)];
+    }
+    return const [];
+  }
+}
+
+class ProjectLink {
+  final String label;
+  final String url;
+
+  const ProjectLink({required this.label, required this.url});
 }
 
 final profile = Profile(
@@ -189,6 +218,17 @@ final projects = [
     subtitle: 'Leads, agenda e operação offline',
     tech: ['.NET MAUI', 'C#', 'SQLite', 'REST APIs'],
     url: '',
+    links: const [
+      ProjectLink(
+        label: 'App Store',
+        url: 'https://apps.apple.com/us/app/intera-expo/id6759558431',
+      ),
+      ProjectLink(
+        label: 'Google Play',
+        url:
+            'https://play.google.com/store/apps/details?id=br.com.interacao.interaexpo&pcampaignid=web_share',
+      ),
+    ],
     bullets: [
       'Aplicativo do expositor com coleta de leads via QR Code e código de barras, parsing estruturado, controle de chave de acesso e rastreabilidade por usuário e dispositivo.',
       'Funcionamento offline-first com persistência local, fila de sincronização automática, controle de status dos leads e continuidade operacional sem internet.',
@@ -201,6 +241,17 @@ final projects = [
     subtitle: 'Networking, feed e mapa indoor offline',
     tech: ['.NET MAUI', 'FCM', 'SkiaSharp', 'OpenCV'],
     url: '',
+    links: const [
+      ProjectLink(
+        label: 'App Store',
+        url: 'https://apps.apple.com/us/app/intera-hub/id6757712811',
+      ),
+      ProjectLink(
+        label: 'Google Play',
+        url:
+            'https://play.google.com/store/apps/details?id=br.com.interacao.interahub&hl=pt_BR',
+      ),
+    ],
     bullets: [
       'Aplicativo do visitante com programação do evento, feed social, posts com mídia, comentários, curtidas, denúncias, favoritos e busca de expositores.',
       'Solicitação e acompanhamento de reuniões com expositores, notificações push via Firebase e controle de sessão com token e refresh token.',
