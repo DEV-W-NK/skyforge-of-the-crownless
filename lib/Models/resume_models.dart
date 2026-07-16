@@ -202,18 +202,6 @@ final projects = [
     ],
   ),
   Project(
-    title: 'InteraExpo e Intera Hub',
-    subtitle: 'Plataforma mobile para eventos corporativos',
-    tech: ['.NET MAUI', 'ASP.NET Core', 'SQL Server', 'SQLite'],
-    url: '',
-    bullets: [
-      'Evolução de uma plataforma mobile para eventos, feiras e exposições, composta pelo InteraExpo para expositores e pelo Intera Hub para visitantes.',
-      'Arquitetura mobile em .NET MAUI/C# com MVVM, injeção de dependência, persistência local com SQLite e integração com APIs ASP.NET Core.',
-      'Fluxos para feed social, networking, reuniões, expositores, notificações push, LGPD, autenticação com token e experiência offline em campo.',
-      'Base preparada para múltiplos idiomas, tema claro/escuro e operação em eventos com conectividade instável.',
-    ],
-  ),
-  Project(
     title: 'InteraExpo - Rede Social Expositor',
     subtitle: 'Leads, agenda e operação offline',
     tech: ['.NET MAUI', 'C#', 'SQLite', 'REST APIs'],
